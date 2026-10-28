@@ -32,8 +32,8 @@ CREATE TABLE IF NOT EXISTS sources (
 );
 
 INSERT OR IGNORE INTO sources (id, name, description, status, compliance) VALUES
-  ('own-services', 'Dịch vụ tự làm', 'Viết content, landing page, trợ lý CSKH cho shop, chạy trên API chính thức', 'planned', 'verified'),
-  ('affiliate', 'Affiliate chính thức', 'Giới thiệu công cụ AI và sản phẩm số qua chương trình affiliate công khai', 'planned', 'verified'),
+  ('own-services', 'Dịch vụ tự làm', 'Viết content, landing page, trả lời khách giúp shop', 'planned', 'verified'),
+  ('affiliate', 'Affiliate chính thức', 'Giới thiệu phần mềm và sản phẩm số qua chương trình affiliate công khai', 'planned', 'verified'),
   ('content', 'Video và bài viết', 'Video ngắn, blog, nhận quảng cáo có gắn nhãn tài trợ', 'planned', 'verified'),
-  ('self-host', 'API mô hình tự host', 'Mô hình mã nguồn mở chạy trên GPU thuê, tuân thủ giấy phép', 'planned', 'review'),
-  ('reseller', 'Đại lý ủy quyền', 'Bán gói tích hợp AI qua kênh đối tác đám mây có hợp đồng', 'planned', 'review');
+  ('self-host', 'Công cụ tự vận hành', 'Công cụ mã nguồn mở chạy trên máy chủ thuê, tuân thủ giấy phép', 'planned', 'review'),
+  ('reseller', 'Đại lý ủy quyền', 'Bán gói phần mềm qua kênh đối tác có hợp đồng', 'planned', 'review');

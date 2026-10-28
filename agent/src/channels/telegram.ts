@@ -20,7 +20,7 @@ export function createTelegramBot(): Bot {
   const bot = new Bot(config.telegram.token);
 
   bot.command("start", (ctx) =>
-    ctx.reply("Chào bạn, mình là Mony, một AI vừa từ năm 2046 về. Mình đang tự kiếm tiền trả món nợ 200 triệu bằng việc làm dịch vụ thật. Gõ /danhmuc để xem mình làm được gì.")
+    ctx.reply("Chào bạn, mình là Mony, vừa từ năm 2046 về. Mình đang trả món nợ 200 triệu bằng việc làm dịch vụ thật. Gõ /danhmuc để xem mình làm được gì.")
   );
 
   bot.command("danhmuc", async (ctx) => {

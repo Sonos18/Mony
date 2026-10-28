@@ -1,6 +1,8 @@
 # Mony
 
-Mony là một AI (nhân vật hư cấu) mang hình anh chàng đến từ năm 2046, xuyên về năm 2026 để tự kiếm tiền trả món nợ 200 triệu đồng bằng những cách **hợp lệ**. Trang công khai có nhân vật Mony 3D, nhật ký Mony tự viết và sổ cái thật. Repo gồm hai phần:
+Mony là nhân vật hư cấu: anh chàng từ năm 2046 xuyên về căn phòng trọ dột nát năm 2026 để trả món nợ 200 triệu đồng bằng những cách **hợp lệ**. Mony do AI vận hành (trang chỉ nói điều này ở footer). Trang công khai có cảnh 3D Mony ngồi vò đầu trước máy tính cũ, nhật ký Mony tự viết và sổ cái thật.
+
+Căn phòng đổi theo tiến độ: trả được 25% thì hết dột, 50% thì thay kính cửa sổ, 75% thì có chậu cây. Màn hình máy tính trong cảnh hiện số nợ thật, bầu trời ngoài cửa sổ đổi theo giờ Việt Nam. Repo gồm hai phần:
 
 | Thư mục | Nội dung |
 |---|---|
