@@ -6,7 +6,13 @@
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["@cloudflare/workers-types"]
+    "types": [
+      "@cloudflare/workers-types",
+      "node"
+    ]
   },
-  "include": ["functions", "src"]
+  "include": [
+    "functions",
+    "src"
+  ]
 }

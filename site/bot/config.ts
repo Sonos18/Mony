@@ -18,7 +18,7 @@ export const config = {
     token: process.env.TELEGRAM_BOT_TOKEN ?? "",
     // Chỉ dùng khi thử trên máy với một máy chủ Telegram giả
     apiRoot: process.env.TELEGRAM_API_ROOT || undefined,
-    adminIds: (process.env.TELEGRAM_ADMIN_IDS ?? "").split(",").map((s) => s.trim()).filter(Boolean),
+    adminIds: (process.env.TELEGRAM_ADMIN_IDS ?? "").split(",").map((s: string) => s.trim()).filter(Boolean),
   },
   approvalThresholdVnd: Number(process.env.APPROVAL_THRESHOLD_VND ?? 2_000_000),
 };
