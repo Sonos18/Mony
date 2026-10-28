@@ -251,7 +251,7 @@ td.amt.cost { color: var(--stamp); }
       </div>
       <div class="stamp" id="deadline-stamp">Hạn chót: 28/10/2027</div>
     </div>
-    <figure class="stage" id="stage" aria-label="Mony, áo vá và băng ở bụng, ngồi trên ghế nhựa trước chiếc laptop cũ trong căn phòng trọ dột nát, hai tay vò đầu. Bấm vào để Mony quay ra nói chuyện.">
+    <figure class="stage" id="stage" aria-label="Mony, tóc xoăn dài, áo hoodie vá mở khóa lộ hình xăm chim phượng trước ngực, băng ở bụng, ngồi trên ghế nhựa trước chiếc laptop cũ trong căn phòng trọ dột nát, hai tay vò đầu. Bấm vào để Mony quay ra nói chuyện.">
       <canvas id="mony-canvas" tabindex="0" aria-hidden="true"></canvas>
       <svg class="mony-fallback" id="mony-fallback" viewBox="0 0 240 240" role="img" aria-label="Mony ngồi trước máy tính cũ, hai tay vò đầu" hidden>
         <rect width="240" height="240" fill="#b9b08f"/><rect y="190" width="240" height="50" fill="#7a5a3c"/>
@@ -1195,11 +1195,39 @@ setInterval(load, 60000);
   const hood = mesh(new THREE.TorusGeometry(0.17, 0.06, 8, 20, Math.PI), M.hoodie, 0, 0.66, -0.12);
   hood.rotation.x = -0.9;
   torso.add(hood);
-  // Áo hoodie cũ: cổ áo thun lộ ra, dây mũ, miếng vá có đường chỉ, lỗ thủng ở vai, gấu áo tưa
-  torso.add(mesh(new THREE.TorusGeometry(0.11, 0.025, 6, 18), M.tee, 0, 0.66, 0.06).rotateX(Math.PI / 2 - 0.25));
-  for (const sx of [-0.05, 0.05]) {
-    const c = mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.2, 6), M.cord, sx, 0.52, 0.255); c.rotation.x = -0.12; torso.add(c);
-    torso.add(mesh(new THREE.SphereGeometry(0.013, 6, 6), M.cord, sx, 0.42, 0.265));
+  // Áo hoodie cũ mở khóa hình chữ V, lộ hình xăm lớn trước ngực: chim phượng xòe cánh trên ngọn lửa
+  const chest = canvasTex(256, 256), cx = chest.ctx;
+  cx.fillStyle = "#f0c29c"; cx.fillRect(0, 0, 256, 256);
+  cx.strokeStyle = "#2b3a4a"; cx.fillStyle = "#2b3a4a"; cx.lineCap = "round"; cx.lineJoin = "round";
+  for (const sgn of [-1, 1]) {
+    for (let k = 0; k < 6; k++) {
+      cx.lineWidth = 5 - k * 0.5;
+      cx.beginPath(); cx.moveTo(128 + sgn * 10, 92 + k * 6);
+      cx.quadraticCurveTo(128 + sgn * (50 + k * 6), 40 + k * 10, 128 + sgn * (104 - k * 7), 52 + k * 17); cx.stroke();
+    }
+    cx.lineWidth = 3;
+    for (let k = 0; k < 4; k++) { cx.beginPath(); cx.moveTo(128 + sgn * 8, 150 + k * 4); cx.quadraticCurveTo(128 + sgn * (30 + k * 10), 170 + k * 10, 128 + sgn * (18 + k * 12), 196 + k * 8); cx.stroke(); }
+  }
+  cx.beginPath(); cx.ellipse(128, 118, 13, 38, 0, 0, Math.PI * 2); cx.fill();
+  cx.beginPath(); cx.moveTo(128, 64); cx.lineTo(140, 78); cx.lineTo(128, 86); cx.lineTo(116, 78); cx.closePath(); cx.fill();
+  cx.fillStyle = "#c0392b"; cx.beginPath(); cx.arc(128, 74, 3, 0, Math.PI * 2); cx.fill();
+  cx.fillStyle = "#b3261e"; cx.globalAlpha = 0.55;
+  for (const [x, h] of [[104, 30], [118, 44], [128, 52], [138, 44], [152, 30]]) { cx.beginPath(); cx.moveTo(x - 9, 256); cx.quadraticCurveTo(x - 4, 256 - h, x, 210 - h * 0.3); cx.quadraticCurveTo(x + 4, 256 - h, x + 9, 256); cx.fill(); }
+  cx.globalAlpha = 1;
+  // Phần áo khép lại ở dưới thành hình chữ V, có viền khóa kéo
+  cx.fillStyle = "#55709a";
+  cx.beginPath(); cx.moveTo(0, 0); cx.lineTo(6, 0); cx.lineTo(108, 256); cx.lineTo(0, 256); cx.fill();
+  cx.beginPath(); cx.moveTo(256, 0); cx.lineTo(250, 0); cx.lineTo(148, 256); cx.lineTo(256, 256); cx.fill();
+  cx.strokeStyle = "#8f96a3"; cx.lineWidth = 4;
+  cx.beginPath(); cx.moveTo(6, 0); cx.lineTo(108, 256); cx.moveTo(250, 0); cx.lineTo(148, 256); cx.stroke();
+  chest.tex.needsUpdate = true;
+  const chestPanel = mesh(new THREE.CylinderGeometry(0.254, 0.272, 0.36, 22, 1, true, -0.8, 1.6), toon(0xffffff, { map: chest.tex }), 0, 0.42, 0);
+  torso.add(chestPanel);
+  torso.add(mesh(new THREE.SphereGeometry(0.256, 18, 8, Math.PI / 2 - 0.6, 1.2, Math.PI / 3.2, Math.PI / 2 - Math.PI / 3.2), M.skin, 0, 0.6, 0));
+  for (const sx of [-1, 1]) {
+    const a = sx * 0.78;
+    const c = mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.2, 6), M.cord, Math.sin(a) * 0.262, 0.52, Math.cos(a) * 0.262); c.rotation.x = -0.12; torso.add(c);
+    torso.add(mesh(new THREE.SphereGeometry(0.013, 6, 6), M.cord, Math.sin(a) * 0.27, 0.42, Math.cos(a) * 0.27));
   }
   function patchOn(mat, w, h, y, ang, tilt) {
     const g = new THREE.Group();
@@ -1240,12 +1268,33 @@ setInterval(load, 60000);
   head.add(mesh(new THREE.SphereGeometry(0.22, 24, 18), M.skin));
   head.add(mesh(new THREE.SphereGeometry(0.235, 24, 14, 0, Math.PI * 2, 0, Math.PI / 2.6), M.hair, 0, 0.03, -0.02));
   head.add(mesh(new THREE.SphereGeometry(0.232, 20, 12, 0, Math.PI * 2, Math.PI / 2.6, Math.PI / 2.2), M.hair, 0, 0.0, -0.03).rotateX(-0.5));
+  // Tóc xoăn dài chấm vai: các lọn tròn xếp quanh gáy và hai bên, buông dần ra ngoài khi xuống thấp
   const tufts = [];
-  for (let i = 0; i < 7; i++) {
-    const t = mesh(new THREE.ConeGeometry(0.06, 0.16, 6), M.hair, Math.cos(i * 0.9) * 0.12, 0.2, Math.sin(i * 0.9) * 0.12);
-    t.rotation.set(Math.sin(i * 0.9) * 0.6, 0, -Math.cos(i * 0.9) * 0.6);
-    tufts.push(t); head.add(t);
+  const curlGeo = new THREE.SphereGeometry(1, 10, 8);
+  function curl(a, y, r, size) {
+    const c = new THREE.Mesh(curlGeo, M.hair);
+    c.position.set(Math.sin(a) * r, y, Math.cos(a) * r);
+    c.scale.set(size, size * 1.15, size);
+    head.add(c); return c;
   }
+  for (let row = 0; row < 7; row++) {
+    const y = 0.13 - row * 0.075, r = 0.2 + row * 0.012, n = 9 + (row % 2);
+    for (let i = 0; i < n; i++) {
+      const a = Math.PI / 2 + 0.25 + (i / (n - 1)) * (Math.PI - 0.5) + (row % 2) * 0.12;
+      tufts.push(curl(a, y + Math.sin(i * 2.3 + row) * 0.012, r, 0.05 + ((i * 7 + row * 3) % 4) * 0.006));
+    }
+  }
+  for (const side of [-1, 1]) for (let row = 0; row < 5; row++) {
+    tufts.push(curl(side * (1.32 + row * 0.04), 0.1 - row * 0.08, 0.215 + row * 0.01, 0.05 + (row % 2) * 0.008));
+  }
+  for (let i = 0; i < 9; i++) tufts.push(curl(-1.1 + i * 0.275, 0.19 + Math.sin(i * 1.7) * 0.012, 0.165, 0.055));
+  for (const a of [-0.55, 0.15, 0.6]) tufts.push(curl(a, 0.14, 0.2, 0.04));
+  // Sẹo cũ trên má trái, có vết khâu
+  const scar = new THREE.Group();
+  scar.add(box(0.075, 0.009, 0.006, toon(0xd98a7a)));
+  for (const x of [-0.022, 0, 0.022]) scar.add(box(0.004, 0.022, 0.006, toon(0xb86a5c), x, 0, 0.002));
+  scar.position.set(0.105, -0.045, 0.19); scar.rotation.set(0, 0.5, 0.55);
+  head.add(scar);
   const eyes = [];
   for (const side of [-1, 1]) {
     const e = mesh(new THREE.SphereGeometry(0.03, 10, 8), M.black, side * 0.08, 0.0, 0.2); e.scale.z = 0.5; eyes.push(e); head.add(e);
