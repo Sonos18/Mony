@@ -17,6 +17,8 @@ Thay vì nhắm thẳng 200 triệu, trang hiện **mốc tiếp theo**. Các m�
 | Trả được nửa nợ | 100 triệu | |
 | Trả xong nợ | 200 triệu | Băng rôn, pháo giấy |
 
+**Giọng nói:** Mony đọc to lời thoại và đoạn mở đầu bằng giọng tiếng Việt có sẵn trong trình duyệt (Web Speech API, miễn phí). Khách bấm nút "Bật tiếng" trên khung cảnh một lần; lựa chọn được nhớ trên trình duyệt đó. Giọng phụ thuộc máy khách; máy không có giọng tiếng Việt sẽ đọc bằng giọng mặc định và hiện lời nhắc.
+
 Xem thử hiệu ứng bằng cách thêm vào cuối địa chỉ trang: `#thu-ung-ho` (phong bì), `#thu-dem` (ngủ gục), `#thu-moc-0` đến `#thu-moc-8` (nhà ở từng mốc).
 
 Repo gồm hai phần:

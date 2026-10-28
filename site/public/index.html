@@ -92,7 +92,10 @@ button { font: inherit; cursor: pointer; }
   font: 400 1rem/1.4 var(--f-hand); text-align: center; box-shadow: 3px 3px 0 var(--ink); transition: opacity .3s; }
 .bubble::after { content: ""; position: absolute; left: 50%; bottom: -8px; width: 12px; height: 12px; background: var(--sheet);
   border-right: 1.5px solid var(--ink); border-bottom: 1.5px solid var(--ink); transform: translateX(-50%) rotate(45deg); }
-.replay { position: absolute; bottom: 8px; left: 10px; border: 0; background: rgba(0,0,0,.45); color: #efe6cf; font-size: .74rem; padding: 4px 10px; border-radius: 999px; }
+.stage-controls { position: absolute; bottom: 8px; left: 10px; display: flex; flex-wrap: wrap; gap: 6px; z-index: 3; max-width: calc(100% - 20px); }
+.ctl { border: 0; background: rgba(0,0,0,.55); color: #efe6cf; font-size: .76rem; padding: 5px 11px; border-radius: 999px; }
+.ctl[aria-pressed="true"] { background: #efe6cf; color: #1d2233; }
+.voice-note { position: absolute; bottom: 42px; left: 10px; right: 10px; margin: 0; z-index: 3; background: rgba(0,0,0,.7); color: #fff; font-size: .78rem; padding: 6px 10px; border-radius: 8px; }
 .prologue { position: absolute; inset: 0; background: #000; color: #e9eef5; display: grid; place-items: center; overflow: hidden; z-index: 2; }
 .prologue.waking { background: transparent; }
 .prologue.waking .ecg { opacity: 0; }
@@ -110,7 +113,7 @@ button { font: inherit; cursor: pointer; }
 .prologue.half .lid.top { transform: translateY(-55%); }
 .prologue.half .lid.bottom { transform: translateY(55%); }
 .skip { position: absolute; top: 10px; right: 10px; border: 1px solid rgba(255,255,255,.4); background: rgba(0,0,0,.4); color: #fff; font-size: .78rem; padding: 4px 12px; border-radius: 999px; z-index: 3; }
-.stage-hint { position: absolute; bottom: 10px; right: 12px; font-size: .74rem; color: #efe6cf; text-shadow: 0 1px 2px #000; }
+.stage-hint { position: absolute; bottom: 44px; right: 12px; font-size: .74rem; color: #efe6cf; text-shadow: 0 1px 2px #000; }
 .hero .kicker { font: 600 .78rem/1 var(--f-body); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); }
 .hero h1 { font: 400 clamp(2rem, 6vw, 3.4rem)/1.1 var(--f-hand); }
 .hero h1 em { font-style: normal; color: var(--stamp); }
@@ -238,7 +241,11 @@ td.amt.cost { color: var(--stamp); }
       </svg>
       <figcaption class="bubble" id="bubble" aria-live="polite">Xin chào, tôi là Mony.</figcaption>
       <span class="stage-hint">Bấm vào Mony để nói chuyện</span>
-      <button class="replay" id="replay" type="button">↺ Xem lại đoạn mở đầu</button>
+      <div class="stage-controls">
+        <button class="ctl" id="voice-toggle" type="button" aria-pressed="false">🔇 Bật tiếng</button>
+        <button class="ctl" id="replay" type="button">↺ Xem lại đoạn mở đầu</button>
+      </div>
+      <p class="voice-note" id="voice-note" hidden></p>
       <div class="prologue" id="prologue" hidden>
         <canvas class="ecg" id="ecg" aria-hidden="true"></canvas>
         <p class="pro-line" id="pro-line" aria-live="polite"></p>
@@ -363,6 +370,36 @@ const FALLBACK = {
 
 // Trạng thái chung để nhân vật 3D biết nói gì
 const MONY = { stats: null, milestone: null, onStats: null, prologueActive: false };
+
+// Giọng nói của Mony: dùng giọng tiếng Việt có sẵn trong trình duyệt. Khách bật bằng nút trên khung cảnh.
+MONY.voice = (function () {
+  const synth = window.speechSynthesis;
+  let enabled = false, viVoice = null;
+  function pickVoice() {
+    if (!synth) return null;
+    const vs = synth.getVoices().filter((v) => /^vi/i.test(v.lang));
+    viVoice = vs.find((v) => /(?<!fe)male|nam ?minh|\ban\b/i.test(v.name)) || vs[0] || null;
+    return viVoice;
+  }
+  if (synth) { pickVoice(); synth.addEventListener && synth.addEventListener("voiceschanged", pickVoice); }
+  function speak(text, opts) {
+    if (!enabled || !synth || !text || /^[….\s]*$/.test(text)) return;
+    synth.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "vi-VN";
+    if (viVoice) u.voice = viVoice;
+    u.rate = (opts && opts.rate) || 1;
+    u.pitch = (opts && opts.pitch) || 0.85;
+    synth.speak(u);
+  }
+  return {
+    get enabled() { return enabled; },
+    supported: () => !!synth,
+    hasVietnamese: () => !!(viVoice || pickVoice()),
+    setEnabled(on) { enabled = on; if (!on && synth) synth.cancel(); },
+    speak,
+  };
+})();
 
 const $ = (id) => document.getElementById(id);
 const vnd = (n) => new Intl.NumberFormat("vi-VN").format(Math.round(n || 0)) + "đ";
@@ -555,8 +592,10 @@ setInterval(load, 60000);
   }
   let lineIdx = 0;
   function say(text) {
+    if (MONY.prologueActive) return;
     bubble.style.opacity = "0";
     setTimeout(() => { bubble.textContent = text; bubble.style.opacity = "1"; }, 200);
+    MONY.voice.speak(text);
   }
   function nextLine() { const l = lines(); say(l[lineIdx++ % l.length]); }
 
@@ -1216,6 +1255,7 @@ setInterval(load, 60000);
       line.classList.toggle("doctor", !!step.doctor);
       line.classList.toggle("memory", !!step.memory);
       if (step.text) line.classList.add("on");
+      if (step.text) MONY.voice.speak(step.text, step.doctor ? { pitch: 0.6, rate: 0.85 } : { rate: 0.95 });
     }, 300);
     if (step.wake) {
       box.classList.add("waking");
@@ -1232,6 +1272,7 @@ setInterval(load, 60000);
     MONY.prologueActive = false;
     try { localStorage.setItem("mony.prologueSeen", "1"); } catch {}
     bubble.textContent = "Đây là… phòng trọ năm 2026? Mình 25 tuổi thật à?";
+    MONY.voice.speak(bubble.textContent);
   }
 
   function play() {
@@ -1250,6 +1291,27 @@ setInterval(load, 60000);
   let seen = false;
   try { seen = localStorage.getItem("mony.prologueSeen") === "1"; } catch {}
   if (!seen && !reduce) play();
+})();
+</script>
+<script>
+// Nút bật/tắt tiếng của Mony
+(function () {
+  const btn = document.getElementById("voice-toggle"), note = document.getElementById("voice-note");
+  function paint() { const on = MONY.voice.enabled; btn.setAttribute("aria-pressed", on); btn.textContent = on ? "🔊 Tắt tiếng" : "🔇 Bật tiếng"; }
+  function flash(msg) { note.textContent = msg; note.hidden = false; setTimeout(() => (note.hidden = true), 5000); }
+  if (!MONY.voice.supported()) { btn.hidden = true; return; }
+  try { if (localStorage.getItem("mony.voice") === "1") MONY.voice.setEnabled(true); } catch {}
+  btn.addEventListener("click", () => {
+    const on = !MONY.voice.enabled;
+    MONY.voice.setEnabled(on);
+    try { localStorage.setItem("mony.voice", on ? "1" : "0"); } catch {}
+    paint();
+    if (on) {
+      if (!MONY.voice.hasVietnamese()) flash("Máy bạn chưa có giọng đọc tiếng Việt, nên Mony sẽ đọc bằng giọng mặc định. Bạn có thể cài thêm giọng tiếng Việt trong phần cài đặt ngôn ngữ của máy.");
+      MONY.voice.speak(document.getElementById("bubble").textContent);
+    }
+  });
+  paint();
 })();
 </script>
 </body>
