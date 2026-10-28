@@ -1,7 +1,7 @@
 import { chat } from "../bot/llm.js";
 import { stats, vnDay } from "../bot/store.js";
 import { db, env, json, sha256 } from "../lib/db.js";
-import { TALK_PERSONA } from "../lib/persona.js";
+import { stageOf, TALK_PERSONA } from "../lib/persona.js";
 
 // Khách nói chuyện trực tiếp với Mony trên trang. Mony nói tiếng Anh như trong phim, kèm phụ đề tiếng Việt.
 // Dùng model nhỏ nhất (mặc định gpt-5.4-nano, suy luận thấp) trong hạn mức token miễn phí mỗi ngày,
@@ -42,7 +42,8 @@ const vnd = (n: number) => new Intl.NumberFormat("vi-VN").format(Math.round(n)) 
 async function facts() {
   const s = await stats();
   return `Today's numbers: debt ${vnd(env.DEBT_TOTAL)}, repaid ${vnd(s.repaid)}, remaining ${vnd(s.remaining)}, ` +
-    `${s.followers} followers, deadline ${env.DEADLINE}, Vietnam time ${new Date(Date.now() + 7 * 3600_000).toISOString().slice(11, 16)}.`;
+    `${s.followers} followers, deadline ${env.DEADLINE}, Vietnam time ${new Date(Date.now() + 7 * 3600_000).toISOString().slice(11, 16)}.\n` +
+    `Your stage: ${stageOf(s.repaid, env.DEBT_TOTAL).en}`;
 }
 
 const clean = (s: unknown, max: number) => (typeof s === "string" ? s.replace(/[*_#`]/g, "").trim().slice(0, max) : "");

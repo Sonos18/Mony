@@ -4,8 +4,9 @@ import { canOffer, allowMessage } from "../guard.js";
 import { chat } from "../llm.js";
 import { orders, type Order } from "../orders.js";
 import { PERSONA } from "../persona.js";
+import { stageOf } from "../../lib/persona.js";
 import { warningText } from "../canhbao.js";
-import { loadChat, record, saveChat, setPending } from "../store.js";
+import { loadChat, record, saveChat, setPending, stats } from "../store.js";
 import { catalog, supplierFor } from "../suppliers/registry.js";
 
 const vnd = (n: number) => new Intl.NumberFormat("vi-VN").format(n) + "đ";
@@ -173,7 +174,9 @@ export function createTelegramBot(): Bot {
     const menu = items.map((p) => `${p.sku}: ${p.name} - ${p.priceVnd ? vnd(p.priceVnd) : "miễn phí (link giới thiệu)"} - ${p.description}`).join("\n");
     const h = [...state.history, { role: "user" as const, content: ctx.message.text }];
     await ctx.replyWithChatAction("typing").catch(() => {});
-    const reply = await chat([{ role: "system", content: `${PERSONA}\n\nDanh mục được phép bán:\n${menu}` }, ...h.slice(-10)]);
+    const s = await stats();
+    const stage = stageOf(s.repaid, s.repaid + s.remaining).vi;
+    const reply = await chat([{ role: "system", content: `${PERSONA}\n\nGiai đoạn: ${stage}\n\nDanh mục được phép bán:\n${menu}` }, ...h.slice(-10)]);
     h.push({ role: "assistant", content: reply });
     await saveChat(ctx.chat.id, h.slice(-20), gate.hits);
     await ctx.reply(reply, { reply_markup: new InlineKeyboard().text("📋 Xem danh mục", "menu") });

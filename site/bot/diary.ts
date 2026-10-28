@@ -1,5 +1,6 @@
 import { chat } from "./llm.js";
 import { PERSONA } from "./persona.js";
+import { stageOf } from "../lib/persona.js";
 import { dayNumber, hasDiary, ledgerOn, stats, vnDay, writeDiary } from "./store.js";
 
 // Viết một trang nhật ký từ số liệu thật của ngày hôm nay. Cron của Vercel gọi lúc 21:00 giờ Việt Nam.
@@ -14,7 +15,7 @@ export async function writeDailyDiary(): Promise<string> {
     : "hôm nay không có giao dịch nào";
 
   const raw = await chat([
-    { role: "system", content: PERSONA },
+    { role: "system", content: `${PERSONA}\n\nGiai đoạn: ${stageOf(s.repaid, s.repaid + s.remaining).vi}` },
     {
       role: "user",
       content:
