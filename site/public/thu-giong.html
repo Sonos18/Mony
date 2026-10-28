@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Thử giọng Mony</title>
+<style>
+  :root { --ink: #1d2a4a; --soft: #5b6680; --paper: #f6f3ea; --blue: #2b4cb3; }
+  body { margin: 0; padding: 24px 16px; background: var(--paper); color: var(--ink); font: 16px/1.5 system-ui, sans-serif; }
+  main { max-width: 640px; margin: 0 auto; display: grid; gap: 16px; }
+  h1 { margin: 0; font-size: 1.5rem; }
+  p { margin: 0; color: var(--soft); }
+  textarea { width: 100%; box-sizing: border-box; min-height: 90px; font: inherit; padding: 10px; border: 1.5px solid var(--ink); border-radius: 10px; }
+  .voice { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 12px; border: 1.5px solid var(--ink); border-radius: 10px; background: #fff; }
+  .voice b { flex: 1 1 220px; }
+  button { font: inherit; font-weight: 600; padding: 8px 16px; border-radius: 999px; border: 0; background: var(--blue); color: #fff; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  .status { flex-basis: 100%; font-size: .85rem; color: var(--soft); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Thử giọng tiếng Việt cho Mony</h1>
+  <p>Ba giọng Piper mã nguồn mở, chạy ngay trong trình duyệt, không tốn tiền máy chủ. Lần đầu bấm mỗi giọng sẽ tải mô hình về máy (vài chục MB), những lần sau nhanh hơn.</p>
+  <textarea id="text">Chào bạn. Tôi là Mony. Hôm nay tôi vẫn còn nợ hai trăm triệu, nhưng tôi đi ngủ đúng giờ rồi.</textarea>
+  <div id="voices"></div>
+</main>
+<script type="module">
+// Chỉ tải thư viện khi bấm nghe lần đầu
+let lib = null;
+const load = () => (lib ??= import("https://cdn.jsdelivr.net/npm/@mintplex-labs/piper-tts-web@1.0.5/+esm"));
+
+const VOICES = [
+  ["vi_VN-vais1000-medium", "VAIS1000 (chất lượng vừa)"],
+  ["vi_VN-25hours_single-low", "25 hours (chất lượng thấp)"],
+  ["vi_VN-vivos-x_low", "VIVOS (rất nhẹ, chỉ dùng phi thương mại)"],
+];
+const box = document.getElementById("voices");
+let audio = null;
+for (const [id, name] of VOICES) {
+  const row = document.createElement("div");
+  row.className = "voice";
+  row.innerHTML = `<b>${name}</b><button type="button">▶ Nghe</button><span class="status"></span>`;
+  const btn = row.querySelector("button"), status = row.querySelector(".status");
+  btn.addEventListener("click", async () => {
+    btn.disabled = true;
+    status.textContent = "Đang chuẩn bị…";
+    const t0 = performance.now();
+    try {
+      const { predict } = await load();
+      const wav = await predict({ text: document.getElementById("text").value, voiceId: id }, (p) => {
+        if (p.total) status.textContent = `Đang tải mô hình: ${Math.round((p.loaded / p.total) * 100)}%`;
+      });
+      if (audio) audio.pause();
+      audio = new Audio(URL.createObjectURL(wav));
+      await audio.play();
+      status.textContent = `Tạo xong sau ${((performance.now() - t0) / 1000).toFixed(1)} giây.`;
+    } catch (e) {
+      status.textContent = "Lỗi: " + (e && e.message ? e.message : e);
+    }
+    btn.disabled = false;
+  });
+  box.append(row);
+}
+</script>
+</body>
+</html>
