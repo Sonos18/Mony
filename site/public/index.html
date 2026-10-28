@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Khải 2046 trả nợ</title>
+<meta name="description" content="Nhật ký công khai của Khải, người từ năm 2046 quay về để trả món nợ 200 triệu bằng một AI agent kiếm tiền hợp lệ.">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Itim&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: một cuốn sổ nợ. Trang giấy kẻ dòng, số nợ đóng dấu đỏ, tiến độ là thanh mực xanh chạy dần. Một cột trên điện thoại, hai cột từ 860px. */
+:root {
+  --paper: #f7f4ec;
+  --sheet: #fffdf7;
+  --rule: #dfe3ee;
+  --ink: #1d2a4a;
+  --ink-soft: #55607a;
+  --blue: #2346a8;
+  --blue-soft: #e4eaf8;
+  --stamp: #c0392b;
+  --stamp-soft: #f9e4e0;
+  --green: #1d7a46;
+  --green-soft: #e0f1e6;
+  --amber: #9a6200;
+  --f-hand: "Itim", "Comic Sans MS", cursive;
+  --f-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-num: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1426; --sheet: #161d33; --rule: #263052; --ink: #e6ebf7; --ink-soft: #9aa5c4;
+    --blue: #8aa6ff; --blue-soft: #1e2a52; --stamp: #ff7a6b; --stamp-soft: #3d1c1c;
+    --green: #6fd69a; --green-soft: #173525; --amber: #f0b955;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1426; --sheet: #161d33; --rule: #263052; --ink: #e6ebf7; --ink-soft: #9aa5c4;
+  --blue: #8aa6ff; --blue-soft: #1e2a52; --stamp: #ff7a6b; --stamp-soft: #3d1c1c;
+  --green: #6fd69a; --green-soft: #173525; --amber: #f0b955;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--paper); color: var(--ink);
+  font: 400 16px/1.6 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 64px;
+}
+.wrap { max-width: 1040px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; line-height: 1.2; }
+p { margin: 0; }
+a { color: var(--blue); }
+button { font: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 4px; }
+.num { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+
+.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.brand { font: 400 1.35rem/1 var(--f-hand); display: flex; align-items: center; gap: 10px; }
+.brand .yr { font: 700 .72rem/1 var(--f-num); background: var(--ink); color: var(--paper); padding: 4px 6px; border-radius: 4px; letter-spacing: .05em; }
+.top-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.btn { border: 1.5px solid var(--ink); background: var(--sheet); color: var(--ink); border-radius: 999px; padding: 8px 16px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; }
+.btn.primary { background: var(--blue); border-color: var(--blue); color: var(--sheet); }
+.btn[aria-pressed="true"] { background: var(--green-soft); border-color: var(--green); color: var(--green); }
+.btn .count { font-family: var(--f-num); font-weight: 700; }
+.iconbtn { border: 1.5px solid var(--rule); background: var(--sheet); color: var(--ink); border-radius: 999px; width: 40px; height: 40px; font-size: 1.2rem; line-height: 1; }
+
+.sheet {
+  background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px;
+  padding: 22px clamp(16px, 4vw, 32px);
+  background-image: repeating-linear-gradient(to bottom, transparent 0 31px, var(--rule) 31px 32px);
+  background-position: 0 14px;
+}
+.sheet.plain { background-image: none; }
+
+.hero { display: grid; gap: 18px; grid-template-columns: 1fr; position: relative; overflow: hidden; }
+.hero .kicker { font: 600 .78rem/1 var(--f-body); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); }
+.hero h1 { font: 400 clamp(2rem, 6vw, 3.4rem)/1.1 var(--f-hand); }
+.hero h1 em { font-style: normal; color: var(--stamp); }
+.hero .story { max-width: 62ch; display: grid; gap: 12px; font-size: 1.04rem; line-height: 2; }
+.stamp {
+  justify-self: start; transform: rotate(-4deg);
+  border: 3px solid var(--stamp); color: var(--stamp); border-radius: 8px;
+  padding: 8px 14px; font: 700 .95rem/1.2 var(--f-num); letter-spacing: .06em; text-transform: uppercase;
+  background: var(--stamp-soft);
+}
+
+.meter { display: grid; gap: 16px; }
+.meter-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 20px; }
+.meter-head h2 { font: 400 1.6rem/1.2 var(--f-hand); }
+.remaining { font: 700 clamp(1.9rem, 6vw, 2.8rem)/1 var(--f-num); color: var(--stamp); }
+.remaining small { font: 500 .9rem var(--f-body); color: var(--ink-soft); display: block; margin-top: 6px; }
+.bar { height: 22px; border-radius: 999px; background: var(--stamp-soft); border: 1.5px solid var(--stamp); overflow: hidden; position: relative; }
+.bar > span { display: block; height: 100%; width: 0; background: var(--blue); transition: width .8s ease; min-width: 0; }
+.bar-scale { display: flex; justify-content: space-between; font: 500 .74rem var(--f-num); color: var(--ink-soft); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.tile { border: 1px solid var(--rule); border-radius: 8px; padding: 12px 14px; display: grid; gap: 4px; background: var(--sheet); }
+.tile .k { font-size: .78rem; color: var(--ink-soft); font-weight: 500; }
+.tile .v { font: 700 1.15rem/1.2 var(--f-num); }
+.tile .v.plus { color: var(--green); }
+.tile .v.minus { color: var(--stamp); }
+.formula { font-size: .84rem; color: var(--ink-soft); }
+
+.wrap > * { min-width: 0; }
+.grid2 { display: grid; gap: 28px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 860px) { .grid2 { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: start; } }
+.col { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; min-width: 0; }
+.sec-title { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.sec-title h2 { font: 400 1.5rem/1.2 var(--f-hand); }
+.sec-title .meta { font-size: .82rem; color: var(--ink-soft); }
+
+.diary { display: grid; gap: 22px; }
+.entry { display: grid; gap: 6px; }
+.entry .when { font: 600 .78rem/1 var(--f-num); color: var(--blue); letter-spacing: .04em; }
+.entry h3 { font: 400 1.2rem/1.3 var(--f-hand); }
+.entry p { line-height: 2; white-space: pre-line; }
+.entry .mood { font-size: .76rem; color: var(--ink-soft); }
+.empty { color: var(--ink-soft); font-style: italic; }
+
+.sources { display: grid; gap: 10px; }
+.src { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 12px 14px; border: 1px solid var(--rule); border-radius: 8px; background: var(--sheet); }
+.src .n { font-weight: 600; }
+.src .d { grid-column: 1 / -1; font-size: .86rem; color: var(--ink-soft); }
+.src .e { font: 700 .95rem var(--f-num); text-align: right; }
+.pill { font-size: .72rem; font-weight: 600; border-radius: 999px; padding: 2px 8px; justify-self: start; }
+.pill.running { background: var(--green-soft); color: var(--green); }
+.pill.planned { background: var(--blue-soft); color: var(--blue); }
+.pill.paused { background: var(--stamp-soft); color: var(--stamp); }
+
+.ledger-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .88rem; min-width: 420px; }
+th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-size: .74rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); font-weight: 600; }
+td.amt { font-family: var(--f-num); text-align: right; white-space: nowrap; font-weight: 700; }
+td.amt.income, td.amt.donation { color: var(--green); }
+td.amt.cost { color: var(--stamp); }
+
+.donate { display: grid; gap: 16px; grid-template-columns: 1fr; }
+@media (min-width: 640px) { .donate.has-qr { grid-template-columns: 200px 1fr; align-items: start; } }
+.qr { width: 200px; max-width: 100%; aspect-ratio: 1; border-radius: 8px; border: 1px solid var(--rule); background: #fff; object-fit: contain; }
+.acct { display: grid; gap: 8px; }
+.acct-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; border-bottom: 1px dashed var(--rule); padding-bottom: 6px; }
+.acct-row .k { color: var(--ink-soft); font-size: .86rem; }
+.acct-row .v { font-weight: 600; word-break: break-all; }
+.copy { border: 1px solid var(--rule); background: transparent; color: var(--blue); border-radius: 6px; padding: 2px 8px; font-size: .78rem; }
+.warnbox { border: 1.5px dashed var(--amber); color: var(--amber); border-radius: 8px; padding: 12px 14px; font-size: .9rem; }
+
+.disclaimer { font-size: .86rem; color: var(--ink-soft); display: grid; gap: 6px; max-width: 75ch; }
+.preview-flag { font: 600 .78rem var(--f-body); color: var(--amber); }
+@media (prefers-reduced-motion: reduce) { .bar > span { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand"><span class="yr">2046 → 2026</span> Sổ nợ của Khải</div>
+    <div class="top-actions">
+      <button class="btn primary" id="follow" type="button" aria-pressed="false">Theo dõi <span class="count" id="followers">0</span></button>
+      <a class="btn" href="#donate">Ủng hộ</a>
+      <button class="iconbtn" id="theme" type="button" aria-label="Đổi giao diện sáng tối">◐</button>
+    </div>
+  </header>
+
+  <section class="sheet hero" aria-labelledby="hero-title">
+    <span class="kicker">Nhật ký công khai · ngày <span id="day-n">1</span></span>
+    <h1 id="hero-title">Tôi đến từ năm 2046.<br>Tôi về để trả <em>200 triệu</em>.</h1>
+    <div class="story">
+      <p>Năm 2026, tôi của tuổi 25 ký một khoản vay 200 triệu đồng mà không đọc kỹ. Hai mươi năm sau, lãi chồng lãi, tôi vẫn còn trả. Tôi mất nhà, mất bạn, mất cả những năm đẹp nhất.</p>
+      <p>Tôi không mang theo được tiền, cũng không mang theo được kết quả xổ số. Thứ duy nhất tôi mang về là cách làm việc cùng AI của năm 2046. Lần này tôi trả món nợ đó bằng việc thật: làm dịch vụ, viết nội dung, giới thiệu sản phẩm tốt. Không lừa ai, không bán thứ không phải của mình.</p>
+      <p>Mỗi đồng kiếm được, mỗi đồng tiêu cho AI đều ghi ở đây, kể cả khi con số là 0.</p>
+    </div>
+    <div class="stamp" id="deadline-stamp">Hạn chót: 28/10/2027</div>
+  </section>
+
+  <section class="sheet plain meter" aria-labelledby="meter-title">
+    <div class="meter-head">
+      <h2 id="meter-title">Còn nợ</h2>
+      <div class="remaining num" id="remaining">200.000.000đ<small>còn <span id="days-left">365</span> ngày</small></div>
+    </div>
+    <div class="bar" role="progressbar" aria-label="Tiến độ trả nợ" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bar"><span id="bar-fill"></span></div>
+    <div class="bar-scale"><span>0đ</span><span>50tr</span><span>100tr</span><span>150tr</span><span>200tr</span></div>
+    <div class="tiles">
+      <div class="tile"><span class="k">Đã trả được</span><span class="v plus" id="t-repaid">0đ</span></div>
+      <div class="tile"><span class="k">Doanh thu</span><span class="v plus" id="t-income">0đ</span></div>
+      <div class="tile"><span class="k">Được ủng hộ</span><span class="v plus" id="t-donated">0đ</span></div>
+      <div class="tile"><span class="k">Chi phí AI và máy chủ</span><span class="v minus" id="t-cost">0đ</span></div>
+      <div class="tile"><span class="k">Cần mỗi ngày</span><span class="v" id="t-perday">0đ</span></div>
+    </div>
+    <p class="formula">Đã trả = doanh thu + ủng hộ − chi phí. Số liệu lấy thẳng từ sổ cái bên dưới. <span class="preview-flag" id="preview-flag" hidden>Đang xem bản dựng trước, chưa nối dữ liệu thật.</span></p>
+  </section>
+
+  <div class="grid2">
+    <div class="col">
+      <section class="sheet" aria-labelledby="diary-title">
+        <div class="sec-title"><h2 id="diary-title">Nhật ký</h2><span class="meta">AI viết mỗi tối, tôi duyệt</span></div>
+        <div class="diary" id="diary"></div>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="sheet plain" aria-labelledby="src-title">
+        <div class="sec-title"><h2 id="src-title">Nguồn kiếm tiền</h2><span class="meta">chỉ nguồn hợp lệ</span></div>
+        <div class="sources" id="sources"></div>
+      </section>
+
+      <section class="sheet plain" aria-labelledby="ledger-title">
+        <div class="sec-title"><h2 id="ledger-title">Sổ cái công khai</h2><span class="meta" id="ledger-count">0 dòng</span></div>
+        <div class="ledger-wrap">
+          <table>
+            <thead><tr><th>Ngày</th><th>Khoản</th><th style="text-align:right">Số tiền</th></tr></thead>
+            <tbody id="ledger"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <section class="sheet plain" id="donate" aria-labelledby="donate-title">
+    <div class="sec-title"><h2 id="donate-title">Ủng hộ Khải</h2><span class="meta">mọi khoản đều vào sổ cái</span></div>
+    <div class="donate" id="donate-box"></div>
+  </section>
+
+  <footer class="disclaimer">
+    <p>Khải là nhân vật hư cấu. Câu chuyện xuyên không là kịch bản, còn mọi con số trên trang là số thật từ sổ cái.</p>
+    <p>Đây là dự án thử nghiệm, không phải lời hứa thu nhập. Tiền ủng hộ là tự nguyện và không hoàn lại. Nếu thất bại, trang này sẽ nói thẳng là thất bại.</p>
+  </footer>
+</div>
+
+<script>
+// Cấu hình chủ trang. Điền thông tin ngân hàng thật trước khi đưa lên mạng.
+const CONFIG = {
+  apiBase: "/api",
+  debtTotal: 200000000,
+  startDate: "2026-10-28",
+  deadline: "2027-10-28",
+  bank: {
+    bankId: "",          // mã ngân hàng VietQR, ví dụ "VCB", "MB", "TCB"
+    accountNo: "",
+    accountName: "",
+    memo: "UNG HO KHAI 2046",
+  },
+};
+
+// Dữ liệu mở đầu khi chưa có API (bản xem trước). Tiền đều là 0 vì chưa có giao dịch nào.
+const FALLBACK = {
+  stats: {
+    debt_total: CONFIG.debtTotal, repaid: 0, remaining: CONFIG.debtTotal, income: 0, cost: 0, donated: 0, followers: 0,
+    start_date: CONFIG.startDate, deadline: CONFIG.deadline,
+    sources: [
+      { id: "own-services", name: "Dịch vụ tự làm", description: "Viết content, landing page, trợ lý CSKH cho shop, chạy trên API chính thức", status: "planned", earned: 0 },
+      { id: "affiliate", name: "Affiliate chính thức", description: "Giới thiệu công cụ AI và sản phẩm số qua chương trình affiliate công khai", status: "planned", earned: 0 },
+      { id: "content", name: "Video và bài viết", description: "Video ngắn, blog, nhận quảng cáo có gắn nhãn tài trợ", status: "planned", earned: 0 },
+      { id: "self-host", name: "API mô hình tự host", description: "Mô hình mã nguồn mở chạy trên GPU thuê, tuân thủ giấy phép", status: "planned", earned: 0 },
+      { id: "reseller", name: "Đại lý ủy quyền", description: "Bán gói tích hợp AI qua kênh đối tác đám mây có hợp đồng", status: "planned", earned: 0 },
+    ],
+  },
+  diary: [
+    { day: 1, title: "Hạ cánh ở năm 2026", mood: "quyết tâm", created_at: "2026-10-28T20:00:00Z",
+      body: "Tôi tỉnh dậy trong căn phòng trọ cũ, điện thoại còn hiện thông báo phê duyệt khoản vay.\nViệc đầu tiên: mở sổ này và ghi số 0 ở dòng doanh thu.\nViệc thứ hai: dựng một AI agent biết bán dịch vụ thật, tính được chi phí của chính nó, và không được phép bán thứ gì mờ ám.\nNgày mai bắt đầu tìm khách hàng đầu tiên." },
+  ],
+  ledger: [],
+};
+
+const $ = (id) => document.getElementById(id);
+const vnd = (n) => new Intl.NumberFormat("vi-VN").format(Math.round(n || 0)) + "đ";
+const dateVi = (s) => { const d = new Date(s.includes("T") || s.includes(" ") ? s.replace(" ", "T") + (s.endsWith("Z") ? "" : "Z") : s); return isNaN(d) ? s : d.toLocaleDateString("vi-VN"); };
+const daysBetween = (a, b) => Math.ceil((new Date(b) - new Date(a)) / 86400000);
+const STATUS = { running: "Đang chạy", planned: "Sắp mở", paused: "Tạm dừng" };
+const KIND = { income: "Thu", cost: "Chi", donation: "Ủng hộ" };
+
+async function getJSON(path) {
+  const r = await fetch(CONFIG.apiBase + path, { headers: { accept: "application/json" } });
+  if (!r.ok || !(r.headers.get("content-type") || "").includes("json")) throw new Error(path);
+  return r.json();
+}
+
+function renderStats(s) {
+  const total = s.debt_total || CONFIG.debtTotal;
+  const pct = Math.min(100, (s.repaid / total) * 100);
+  const today = new Date().toISOString().slice(0, 10);
+  const left = Math.max(0, daysBetween(today, s.deadline));
+  $("remaining").firstChild.nodeValue = vnd(s.remaining);
+  $("days-left").textContent = left;
+  $("day-n").textContent = Math.max(1, daysBetween(s.start_date, today) + 1);
+  $("bar-fill").style.width = pct.toFixed(2) + "%";
+  $("bar").setAttribute("aria-valuenow", pct.toFixed(1));
+  $("t-repaid").textContent = vnd(s.repaid);
+  $("t-income").textContent = vnd(s.income);
+  $("t-donated").textContent = vnd(s.donated);
+  $("t-cost").textContent = vnd(s.cost);
+  $("t-perday").textContent = left ? vnd(s.remaining / left) : "—";
+  $("followers").textContent = new Intl.NumberFormat("vi-VN").format(s.followers);
+  $("deadline-stamp").textContent = "Hạn chót: " + dateVi(s.deadline);
+
+  const box = $("sources"); box.replaceChildren();
+  for (const src of s.sources) {
+    const el = document.createElement("div"); el.className = "src";
+    el.innerHTML = '<span class="n"></span><span class="e num"></span><span class="pill"></span><span class="d"></span>';
+    el.querySelector(".n").textContent = src.name;
+    el.querySelector(".e").textContent = vnd(src.earned);
+    const pill = el.querySelector(".pill"); pill.textContent = STATUS[src.status] || src.status; pill.classList.add(src.status);
+    el.querySelector(".d").textContent = src.description || "";
+    box.append(el);
+  }
+}
+
+function renderDiary(entries) {
+  const box = $("diary"); box.replaceChildren();
+  if (!entries.length) { box.innerHTML = '<p class="empty">Chưa có trang nhật ký nào.</p>'; return; }
+  for (const e of entries) {
+    const el = document.createElement("article"); el.className = "entry";
+    el.innerHTML = '<span class="when"></span><h3></h3><p></p>';
+    el.querySelector(".when").textContent = "NGÀY " + e.day + " · " + dateVi(e.created_at);
+    el.querySelector("h3").textContent = e.title;
+    el.querySelector("p").textContent = e.body;
+    if (e.mood) { const m = document.createElement("span"); m.className = "mood"; m.textContent = "Tâm trạng: " + e.mood; el.append(m); }
+    box.append(el);
+  }
+}
+
+function renderLedger(entries) {
+  const body = $("ledger"); body.replaceChildren();
+  $("ledger-count").textContent = entries.length + " dòng gần nhất";
+  if (!entries.length) {
+    body.innerHTML = '<tr><td colspan="3" class="empty">Chưa có giao dịch nào. Dòng đầu tiên sẽ xuất hiện ở đây.</td></tr>';
+    return;
+  }
+  for (const e of entries) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = '<td></td><td></td><td class="amt"></td>';
+    tr.children[0].textContent = dateVi(e.created_at);
+    tr.children[1].textContent = (KIND[e.kind] || e.kind) + " · " + (e.note || e.source);
+    tr.children[2].textContent = (e.kind === "cost" ? "−" : "+") + vnd(e.amount);
+    tr.children[2].classList.add(e.kind);
+    body.append(tr);
+  }
+}
+
+function renderDonate() {
+  const b = CONFIG.bank, box = $("donate-box");
+  if (!b.bankId || !b.accountNo) {
+    box.innerHTML = '<div class="warnbox">Chủ trang chưa điền tài khoản nhận ủng hộ. Mở public/index.html, điền CONFIG.bank rồi deploy lại.</div>';
+    return;
+  }
+  box.classList.add("has-qr");
+  const qr = "https://img.vietqr.io/image/" + encodeURIComponent(b.bankId) + "-" + encodeURIComponent(b.accountNo) +
+    "-compact2.png?addInfo=" + encodeURIComponent(b.memo) + "&accountName=" + encodeURIComponent(b.accountName);
+  box.innerHTML = '<img class="qr" alt="Mã VietQR để chuyển khoản ủng hộ" src="' + qr + '"><div class="acct"></div>';
+  const acct = box.querySelector(".acct");
+  for (const [k, v] of [["Ngân hàng", b.bankId], ["Số tài khoản", b.accountNo], ["Chủ tài khoản", b.accountName], ["Nội dung", b.memo]]) {
+    const row = document.createElement("div"); row.className = "acct-row";
+    row.innerHTML = '<span class="k"></span><span class="v"></span>';
+    row.querySelector(".k").textContent = k; row.querySelector(".v").textContent = v;
+    if (k === "Số tài khoản" || k === "Nội dung") {
+      const c = document.createElement("button"); c.type = "button"; c.className = "copy"; c.textContent = "Chép";
+      c.addEventListener("click", async () => { try { await navigator.clipboard.writeText(v); c.textContent = "Đã chép"; } catch { getSelection().selectAllChildren(row.querySelector(".v")); } });
+      row.append(c);
+    }
+    acct.append(row);
+  }
+  const note = document.createElement("p"); note.className = "formula";
+  note.textContent = "Kiểm tra đúng tên chủ tài khoản trước khi chuyển. Khoản ủng hộ được ghi vào sổ cái sau khi ngân hàng xác nhận.";
+  acct.append(note);
+}
+
+// Theo dõi: ghi một lần mỗi người, nhớ trạng thái trên trình duyệt này.
+function followed() { try { return localStorage.getItem("khai2046.followed") === "1"; } catch { return false; } }
+function setFollowed() { try { localStorage.setItem("khai2046.followed", "1"); } catch {} }
+function paintFollow() { const on = followed(); $("follow").setAttribute("aria-pressed", on); $("follow").firstChild.nodeValue = on ? "Đang theo dõi " : "Theo dõi "; }
+$("follow").addEventListener("click", async () => {
+  if (followed()) return;
+  try {
+    const r = await fetch(CONFIG.apiBase + "/follow", { method: "POST" });
+    if (r.ok) { const d = await r.json(); $("followers").textContent = new Intl.NumberFormat("vi-VN").format(d.followers); }
+  } catch {}
+  setFollowed(); paintFollow();
+});
+
+// Giao diện sáng tối
+$("theme").addEventListener("click", () => {
+  const root = document.documentElement;
+  const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = dark ? "light" : "dark";
+  try { localStorage.setItem("khai2046.theme", root.dataset.theme); } catch {}
+});
+try { const t = localStorage.getItem("khai2046.theme"); if (t) document.documentElement.dataset.theme = t; } catch {}
+
+async function load() {
+  let preview = false, stats, diary, ledger;
+  try {
+    [stats, diary, ledger] = await Promise.all([getJSON("/stats"), getJSON("/diary?limit=20"), getJSON("/ledger?limit=30")]);
+    diary = diary.entries; ledger = ledger.entries;
+    if (!diary.length) diary = FALLBACK.diary;
+  } catch {
+    preview = true; ({ stats, diary, ledger } = FALLBACK);
+  }
+  $("preview-flag").hidden = !preview;
+  renderStats(stats); renderDiary(diary); renderLedger(ledger);
+}
+
+renderStats(FALLBACK.stats); renderDiary(FALLBACK.diary); renderLedger([]); renderDonate(); paintFollow();
+load();
+setInterval(load, 60000);
+</script>
+</body>
+</html>
