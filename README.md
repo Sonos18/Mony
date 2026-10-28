@@ -25,7 +25,7 @@ Repo gồm hai phần:
 
 | Thư mục | Nội dung |
 |---|---|
-| `site/` | Trang công khai (Cloudflare Pages) và API lưu số liệu (Pages Functions + D1): người theo dõi, nhật ký, sổ cái, nguồn thu, ủng hộ |
+| `site/` | Trang công khai và API lưu số liệu: người theo dõi, nhật ký, sổ cái, nguồn thu, ủng hộ. Chạy trên Vercel + Neon (`api/`, `lib/`) hoặc Cloudflare Pages + D1 (`functions/`) |
 | `agent/` | Agent Node.js: bot Telegram bán dịch vụ, lớp kiểm soát, các nguồn hàng dạng adapter, ghi chi phí AI và nhật ký hằng ngày vào trang |
 
 Nguồn bán tài khoản AI đã bị loại khỏi dự án (quyết định ngày 28/10/2026). Lớp kiểm soát chặn mọi SKU gắn nhãn `shared-account`, `account-resale`, `credential`.
@@ -39,14 +39,31 @@ Telegram ──► Lõi agent (persona Mony) ──► Cổng mô hình (LiteLLM
           Lớp kiểm soát (guard.ts) ──► Sổ đăng ký nguồn (suppliers/registry.ts)
                  │                        ├─ own-services: dịch vụ tự làm
                  ▼                        └─ affiliate: link giới thiệu chính thức
-          Sổ cái + nhật ký ──► API của trang (site/functions/api) ──► D1
+          Sổ cái + nhật ký ──► API của trang (site/api hoặc site/functions/api) ──► Postgres hoặc D1
 ```
 
 Mọi khoản thu, chi (kể cả tiền gọi AI) và ủng hộ đều đi qua `POST /api/ledger`, nên số trên trang luôn khớp sổ cái.
 
-## Chạy trang công khai
+## Chạy trang công khai trên Vercel (dễ nhất)
 
-Cần tài khoản Cloudflare (gói miễn phí là đủ).
+Không cần gõ lệnh. Gói miễn phí của Vercel và Neon là đủ.
+
+1. Điền tài khoản nhận ủng hộ vào `CONFIG.bank` trong `site/public/index.html` (đã điền sẵn Techcombank).
+2. Vào [vercel.com/new](https://vercel.com/new), đăng nhập bằng GitHub, chọn repo `Mony` rồi bấm Import.
+3. Ở màn hình cấu hình: **Root Directory** chọn `site`, **Framework Preset** để `Other`. Mở **Environment Variables**, thêm:
+   - `ADMIN_TOKEN`: một chuỗi ngẫu nhiên dài (agent dùng để ghi sổ, đừng để lộ).
+   - `FOLLOW_SALT`: một chuỗi ngẫu nhiên khác.
+4. Bấm **Deploy**. Trang lên ngay, nhưng số liệu còn là bản xem trước vì chưa có cơ sở dữ liệu.
+5. Trong project vừa tạo, mở tab **Storage**, chọn **Neon** (Postgres), bấm Create và Connect vào project. Vercel tự thêm biến `DATABASE_URL`.
+6. Mở tab **Deployments**, bấm ⋯ ở bản mới nhất, chọn **Redeploy**. Bảng dữ liệu tự được tạo ở lần gọi API đầu tiên, không cần chạy lệnh nào.
+
+Từ đó mỗi lần đẩy code lên `main`, Vercel tự deploy lại. Muốn đổi tổng nợ hay ngày bắt đầu, thêm biến `DEBT_TOTAL`, `START_DATE`, `DEADLINE` (mặc định 200000000, 2026-10-28, 2027-10-28).
+
+Bản Vercel nằm ở `site/api/` (4 API) và `site/lib/db.ts` (kết nối Postgres, tạo bảng). Thử trên máy: cần Postgres, đặt `DATABASE_URL`, `ADMIN_TOKEN`, `FOLLOW_SALT` rồi chạy `npx vercel dev` trong `site/`.
+
+## Hoặc chạy trên Cloudflare Pages
+
+Bản Cloudflare dùng `site/functions/` và D1. Cần tài khoản Cloudflare (gói miễn phí là đủ).
 
 ```bash
 cd site
