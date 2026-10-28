@@ -1,11 +1,11 @@
-name = "khai-2046"
+name = "mony"
 compatibility_date = "2026-09-01"
 pages_build_output_dir = "public"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "khai-2046"
-database_id = "THAY_BANG_ID_SAU_KHI_TAO"   # wrangler d1 create khai-2046
+database_name = "mony"
+database_id = "THAY_BANG_ID_SAU_KHI_TAO"   # wrangler d1 create mony
 
 [vars]
 DEBT_TOTAL = "200000000"

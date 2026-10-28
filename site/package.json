@@ -1,10 +1,10 @@
 {
-  "name": "khai-2046-site",
+  "name": "mony-site",
   "private": true,
   "scripts": {
     "dev": "wrangler pages dev",
     "deploy": "wrangler pages deploy",
-    "db:init": "wrangler d1 execute khai-2046 --remote --file=schema.sql",
+    "db:init": "wrangler d1 execute mony --remote --file=schema.sql",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

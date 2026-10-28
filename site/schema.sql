@@ -1,4 +1,4 @@
--- Cơ sở dữ liệu D1 cho trang "Khải 2046"
+-- Cơ sở dữ liệu D1 cho trang "Mony"
 CREATE TABLE IF NOT EXISTS followers (
   id_hash TEXT PRIMARY KEY,          -- sha256(ip + salt), không lưu IP thật
   created_at TEXT NOT NULL DEFAULT (datetime('now'))

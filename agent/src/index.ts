@@ -25,7 +25,7 @@ async function main() {
     return;
   }
   const bot = createTelegramBot();
-  console.log("Khải đã lên Telegram.");
+  console.log("Mony đã lên Telegram.");
   await bot.start();
 }
 

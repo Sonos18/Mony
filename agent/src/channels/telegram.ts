@@ -20,7 +20,7 @@ export function createTelegramBot(): Bot {
   const bot = new Bot(config.telegram.token);
 
   bot.command("start", (ctx) =>
-    ctx.reply("Chào bạn, mình là Khải, vừa từ năm 2046 về. Mình đang trả món nợ 200 triệu bằng việc làm dịch vụ thật. Gõ /danhmuc để xem mình làm được gì.")
+    ctx.reply("Chào bạn, mình là Mony, một AI vừa từ năm 2046 về. Mình đang tự kiếm tiền trả món nợ 200 triệu bằng việc làm dịch vụ thật. Gõ /danhmuc để xem mình làm được gì.")
   );
 
   bot.command("danhmuc", async (ctx) => {
@@ -99,7 +99,7 @@ export function createTelegramBot(): Bot {
     return ctx.reply(`Đã ghi ${vnd(n)} tiền ủng hộ.`);
   });
 
-  // Trò chuyện tự do: Khải tư vấn dựa trên danh mục đã qua lớp kiểm soát.
+  // Trò chuyện tự do: Mony tư vấn dựa trên danh mục đã qua lớp kiểm soát.
   bot.on("message:text", async (ctx) => {
     if (!allowMessage(String(ctx.from.id))) return;
     const items = await offerable();

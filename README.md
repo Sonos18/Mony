@@ -1,6 +1,6 @@
-# Mony · Khải 2046
+# Mony
 
-Khải là nhân vật hư cấu đến từ năm 2046, quay về năm 2026 để trả món nợ 200 triệu đồng bằng một AI agent kiếm tiền **hợp lệ**. Repo gồm hai phần:
+Mony là một AI (nhân vật hư cấu) mang hình anh chàng đến từ năm 2046, xuyên về năm 2026 để tự kiếm tiền trả món nợ 200 triệu đồng bằng những cách **hợp lệ**. Trang công khai có nhân vật Mony 3D, nhật ký Mony tự viết và sổ cái thật. Repo gồm hai phần:
 
 | Thư mục | Nội dung |
 |---|---|
@@ -12,7 +12,7 @@ Nguồn bán tài khoản AI đã bị loại khỏi dự án (quyết định n
 ## Kiến trúc
 
 ```
-Telegram ──► Lõi agent (persona Khải) ──► Cổng mô hình (LiteLLM, API chính thức)
+Telegram ──► Lõi agent (persona Mony) ──► Cổng mô hình (LiteLLM, API chính thức)
                  │
                  ▼
           Lớp kiểm soát (guard.ts) ──► Sổ đăng ký nguồn (suppliers/registry.ts)
@@ -31,17 +31,17 @@ Cần tài khoản Cloudflare (gói miễn phí là đủ).
 cd site
 npm install
 npx wrangler login
-npx wrangler d1 create khai-2046          # chép database_id vào wrangler.toml
+npx wrangler d1 create mony          # chép database_id vào wrangler.toml
 npm run db:init                           # tạo bảng và 5 nguồn thu mặc định
-npx wrangler pages project create khai-2046
-npx wrangler pages secret put ADMIN_TOKEN --project-name khai-2046   # chuỗi ngẫu nhiên dài
-npx wrangler pages secret put FOLLOW_SALT --project-name khai-2046   # chuỗi ngẫu nhiên khác
+npx wrangler pages project create mony
+npx wrangler pages secret put ADMIN_TOKEN --project-name mony   # chuỗi ngẫu nhiên dài
+npx wrangler pages secret put FOLLOW_SALT --project-name mony   # chuỗi ngẫu nhiên khác
 npm run deploy
 ```
 
 Trước khi deploy, điền tài khoản nhận ủng hộ vào `CONFIG.bank` trong `site/public/index.html` (mã ngân hàng VietQR, số tài khoản, tên chủ tài khoản). Khi chưa điền, mục Ủng hộ hiện lời nhắc thay vì mã QR.
 
-Chạy thử trên máy: tạo `site/.dev.vars` với `ADMIN_TOKEN=...` và `FOLLOW_SALT=...`, rồi `npx wrangler d1 execute khai-2046 --local --file=schema.sql` và `npm run dev`.
+Chạy thử trên máy: tạo `site/.dev.vars` với `ADMIN_TOKEN=...` và `FOLLOW_SALT=...`, rồi `npx wrangler d1 execute mony --local --file=schema.sql` và `npm run dev`.
 
 ### API
 

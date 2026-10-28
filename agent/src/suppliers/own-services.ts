@@ -1,7 +1,7 @@
 import { chat } from "../llm.js";
 import type { Delivery, Product, Quote, SupplierAdapter } from "./types.js";
 
-// Nguồn 1: dịch vụ do Khải tự làm bằng API chính thức. Khách trả tiền cho kết quả, không phải cho quyền truy cập AI.
+// Nguồn 1: dịch vụ do Mony tự làm bằng API chính thức. Khách trả tiền cho kết quả, không phải cho quyền truy cập AI.
 const PRODUCTS: Product[] = [
   {
     sku: "content-10",
