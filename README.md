@@ -35,7 +35,7 @@ Nguồn bán tài khoản AI đã bị loại khỏi dự án (quyết định n
 ## Kiến trúc
 
 ```
-Telegram ──► Lõi agent (persona Mony) ──► Cổng mô hình (LiteLLM, API chính thức)
+Telegram ──► Lõi agent (persona Mony) ──► Mô hình GPT (API chính thức của OpenAI)
                  │
                  ▼
           Lớp kiểm soát (guard.ts) ──► Sổ đăng ký nguồn (suppliers/registry.ts)
@@ -101,7 +101,7 @@ cp .env.example .env      # điền LLM_API_KEY, SITE_URL, SITE_ADMIN_TOKEN, TEL
 npm start
 ```
 
-Cổng mô hình: chạy [LiteLLM proxy](https://docs.litellm.ai/) với API key chính thức (Anthropic, OpenAI, Bedrock, Vertex...) hoặc trỏ `LLM_BASE_URL` thẳng tới một endpoint tương thích OpenAI.
+Mô hình: mặc định gọi thẳng OpenAI bằng `gpt-5.4`. Bật chia sẻ dữ liệu ở platform.openai.com thì mỗi ngày có hạn mức token miễn phí (250 nghìn token cho nhóm gpt-5.4, 2,5 triệu cho nhóm mini). Agent tự đếm token trong ngày: dùng gần hết phần của `gpt-5.4` thì chuyển sang `gpt-5.4-mini`, hết cả hai thì dừng đến hôm sau, nên không phát sinh tiền. Đổi các mức này bằng `LLM_DAILY_TOKENS`, `LLM_FALLBACK_MODEL`, `LLM_FALLBACK_DAILY_TOKENS`. Lưu ý: khi bật chia sẻ dữ liệu, yêu cầu của khách gửi qua bot có thể được OpenAI dùng để huấn luyện, nên nói rõ với khách và đừng nhận tài liệu mật. Muốn dùng nhà cung cấp khác thì trỏ `LLM_BASE_URL` tới endpoint tương thích OpenAI (ví dụ [LiteLLM proxy](https://docs.litellm.ai/)).
 
 Lệnh Telegram:
 

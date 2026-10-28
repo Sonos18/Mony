@@ -23,7 +23,7 @@ export async function writeDailyDiary(): Promise<void> {
         `còn nợ ${stats.remaining}đ, đã trả ${stats.repaid}đ, ${stats.followers} người theo dõi. Giao dịch hôm nay: ${facts}.\n` +
         `Trả về JSON đúng dạng {"title": "...", "body": "...", "mood": "..."}; body 120–220 chữ, xuống dòng bằng \\n.`,
     },
-  ], { maxTokens: 900, purpose: "diary" });
+  ], { maxTokens: 2500, purpose: "diary" });
 
   const json = raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1);
   const entry = JSON.parse(json) as { title: string; body: string; mood?: string };

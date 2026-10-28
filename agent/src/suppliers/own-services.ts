@@ -56,7 +56,7 @@ export const ownServices: SupplierAdapter = {
   async fulfill(orderId, sku, brief): Promise<Delivery> {
     const prompt = PROMPTS[sku];
     if (!prompt) throw new Error(`Không có SKU ${sku}`);
-    const text = await chat([{ role: "user", content: `${prompt}\n${brief}` }], { maxTokens: 4000, purpose: sku });
+    const text = await chat([{ role: "user", content: `${prompt}\n${brief}` }], { maxTokens: 8000, purpose: sku });
     return { orderId, message: text };
   },
   async refund() { /* hoàn tiền làm thủ công qua ngân hàng; sổ cái ghi bằng lệnh /hoantien */ },
