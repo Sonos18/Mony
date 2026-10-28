@@ -97,7 +97,7 @@ Chạy thử trên máy: tạo `site/.dev.vars` với `ADMIN_TOKEN=...` và `FOL
 ```bash
 cd agent
 npm install
-cp .env.example .env      # điền LLM_API_KEY, SITE_URL, SITE_ADMIN_TOKEN, TELEGRAM_BOT_TOKEN, TELEGRAM_ADMIN_IDS
+cp .env.example .env      # điền OPENAI_API_KEY, SITE_URL, SITE_ADMIN_TOKEN, TELEGRAM_BOT_TOKEN, TELEGRAM_ADMIN_IDS
 npm start
 ```
 

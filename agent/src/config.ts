@@ -10,7 +10,8 @@ export const config = {
   // thì chuyển sang model dự phòng để không bị tính tiền.
   llm: {
     baseUrl: process.env.LLM_BASE_URL ?? "https://api.openai.com/v1",
-    apiKey: need("LLM_API_KEY"),
+    // Dùng chung tên OPENAI_API_KEY với trang trên Vercel cho dễ nhớ
+    apiKey: process.env.LLM_API_KEY || need("OPENAI_API_KEY"),
     model: process.env.LLM_MODEL ?? "gpt-5.4",
     dailyTokens: Number(process.env.LLM_DAILY_TOKENS ?? 230_000),
     fallbackModel: process.env.LLM_FALLBACK_MODEL ?? "gpt-5.4-mini",
