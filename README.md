@@ -1,6 +1,6 @@
 # Mony
 
-Mony là nhân vật hư cấu. Sau hai mươi năm làm việc quá sức để trả khoản vay 200 triệu ký năm 25 tuổi, bị bạn gái bỏ, họ hàng quay lưng, bất lực nhìn mẹ mất vì không đủ tiền chạy chữa, năm 2046 Mony gục ngã và nghe bác sĩ nói không chữa được nữa. Mở mắt ra, Mony đang ở căn phòng trọ cũ năm 25 tuổi, món nợ vẫn còn nguyên, và lần này trả nợ bằng những cách **hợp lệ** mà vẫn đi ngủ đúng giờ. Mony do AI vận hành (trang chỉ nói điều này ở footer). Lần đầu vào trang, khách xem một đoạn mở đầu ngắn: những ký ức cũ lướt qua, phòng hồi sức, máy điện tim, lời bác sĩ, rồi mở mắt trong phòng trọ.
+Mony là nhân vật hư cấu, trong một hậu truyện do người hâm mộ tự viết (không liên quan và không được nhà sản xuất hay diễn viên nào bảo trợ; trang không ghi tên phim, không dùng hình ảnh diễn viên). Đêm cái trại lừa đảo bên kia sông cháy, Mony bị đâm nhưng không chết; anh trốn qua sông và vay nóng 200 triệu để trả tiền đò, viện phí, chuộc căn cước. Hai mươi năm sau, lãi chồng lãi: bạn gái bỏ đi, họ hàng quay lưng, mẹ mất vì không đủ tiền chạy chữa, và năm 2046 Mony gục ngã, nghe bác sĩ nói không chữa được nữa. Mở mắt ra, anh về lại phòng trọ năm 25 tuổi, sáng hôm sau đêm thoát trại, và lần này trả nợ bằng việc lương thiện, đồng thời chỉ cho người khác thấy các bẫy "việc nhẹ lương cao" (mục cảnh báo trên trang và lệnh `/canhbao` của bot). Mony do AI vận hành (trang chỉ nói điều này ở footer). Lần đầu vào trang, khách xem đoạn mở đầu khoảng 33 giây: đêm trại cháy, bến sông, những năm trả nợ, phòng hồi sức, rồi mở mắt trong phòng trọ.
 
 Cảnh 3D nhìn ngang: Mony ngồi ghế nhựa trước laptop, vò đầu hoặc gõ phím; ban đêm (0h–6h giờ Việt Nam) ngủ gục trên bàn. Có người ủng hộ thì phong bì bay qua cửa sổ và Mony nhảy mừng. Mèo hoang trên bậu cửa sổ béo lên theo số người theo dõi. Lịch treo tường xé một tờ mỗi ngày và đếm ngược tới hạn chót.
 
@@ -108,6 +108,7 @@ Lệnh Telegram:
 | Lệnh | Ai dùng | Việc |
 |---|---|---|
 | `/danhmuc` | khách | xem sản phẩm đã qua lớp kiểm soát |
+| `/canhbao` | khách | 7 dấu hiệu tin tuyển dụng "việc nhẹ lương cao" lừa đảo |
 | `/mua <sku> <yêu cầu>` | khách | tạo đơn, nhận mã đơn để ghi vào nội dung chuyển khoản |
 | `/xacnhan <mã đơn>` | chủ trang | xác nhận đã nhận tiền, agent làm và giao sản phẩm, ghi doanh thu |
 | `/hoantien <mã đơn> <lý do>` | chủ trang | ghi khoản hoàn tiền |

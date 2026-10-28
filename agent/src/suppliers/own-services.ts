@@ -21,11 +21,25 @@ const PRODUCTS: Product[] = [
     description: "Trang giới thiệu sản phẩm bằng HTML, gửi file để shop tự đăng. Có bản demo trước khi thanh toán.",
     priceVnd: 299_000, costVnd: 15_000, tags: ["web"],
   },
+  {
+    sku: "dich-5",
+    name: "Dịch 5 trang Anh ↔ Việt",
+    description: "Dịch tài liệu, hợp đồng mẫu, mô tả sản phẩm giữa tiếng Anh và tiếng Việt, khoảng 5 trang A4. Mony đọc lại trước khi gửi.",
+    priceVnd: 149_000, costVnd: 6_000, tags: ["translate"],
+  },
+  {
+    sku: "email-en",
+    name: "10 email tiếng Anh cho shop",
+    description: "Email chào hàng, trả lời khách quốc tế, xin lỗi giao trễ... viết bằng tiếng Anh tự nhiên theo tình huống của shop.",
+    priceVnd: 89_000, costVnd: 4_000, tags: ["translate", "content"],
+  },
 ];
 
 const PROMPTS: Record<string, string> = {
   "content-10": "Viết 10 bài đăng Facebook bán hàng bằng tiếng Việt, mỗi bài 80–150 chữ, có emoji vừa phải, mỗi bài kèm một dòng gợi ý ảnh. Thông tin shop:",
   "reels-5": "Viết 5 kịch bản video ngắn 30–45 giây bằng tiếng Việt. Mỗi kịch bản gồm: câu mở đầu 3 giây, các cảnh, lời thoại, lời kêu gọi. Thông tin sản phẩm:",
+  "dich-5": "Dịch chính xác và tự nhiên văn bản sau giữa tiếng Anh và tiếng Việt (tự nhận chiều dịch). Giữ định dạng, không bỏ ý, ghi chú cuối bài những chỗ cần khách xác nhận. Văn bản:",
+  "email-en": "Viết 10 email tiếng Anh tự nhiên, lịch sự cho shop theo các tình huống khách mô tả, mỗi email có tiêu đề và bản dịch tiếng Việt ngắn bên dưới. Thông tin shop:",
   "landing-1": "Viết một landing page HTML đơn giản, một file, CSS nội tuyến, tiếng Việt, tối ưu điện thoại. Thông tin sản phẩm:",
 };
 

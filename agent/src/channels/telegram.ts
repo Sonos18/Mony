@@ -4,6 +4,7 @@ import { canOffer, allowMessage } from "../guard.js";
 import { chat, flushCost, type Message } from "../llm.js";
 import { orders } from "../orders.js";
 import { PERSONA } from "../persona.js";
+import { warningText } from "../canhbao.js";
 import { site } from "../site.js";
 import { catalog, supplierFor } from "../suppliers/registry.js";
 
@@ -20,8 +21,10 @@ export function createTelegramBot(): Bot {
   const bot = new Bot(config.telegram.token);
 
   bot.command("start", (ctx) =>
-    ctx.reply("Chào bạn, mình là Mony, vừa từ năm 2046 về. Mình đang trả món nợ 200 triệu bằng việc làm dịch vụ thật. Gõ /danhmuc để xem mình làm được gì.")
+    ctx.reply("Chào bạn, mình là Mony. Mình từng thoát khỏi một cái trại với món nợ 200 triệu, và giờ trả nợ bằng việc làm dịch vụ thật. Gõ /danhmuc để xem mình làm được gì, hoặc /canhbao để xem dấu hiệu \"việc nhẹ lương cao\" lừa đảo.")
   );
+
+  bot.command("canhbao", (ctx) => ctx.reply(warningText()));
 
   bot.command("danhmuc", async (ctx) => {
     const items = await offerable();
