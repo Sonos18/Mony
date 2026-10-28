@@ -8,12 +8,13 @@ import { TALK_PERSONA } from "../lib/persona.js";
 // chung bộ đếm với bot Telegram (site/bot/llm.ts). Mỗi khách có giới hạn lượt mỗi ngày.
 const PER_VISITOR = Number(process.env.TALK_DAILY_PER_VISITOR ?? 20);
 
-type Line = { en: string; vi: string };
+const MOODS = ["neutral", "happy", "laugh", "sad", "tired", "surprised", "shy", "worried", "angry"];
+type Line = { en: string; vi: string; mood?: string };
 const LINES: Record<string, Line> = {
-  tired: { en: "We talked a lot today. Let me get back to work. See you tomorrow.", vi: "Hôm nay mình nói nhiều rồi, để Mony đi làm tiếp. Mai nói tiếp nhé." },
-  broke: { en: "My mouth is out of electricity for today. Talk tomorrow?", vi: "Hôm nay hết tiền điện cho cái miệng này rồi. Mai nói tiếp nhé?" },
-  pass: { en: "I'd rather not talk about that. Something else?", vi: "Chuyện đó Mony xin phép không nói. Mình nói chuyện khác nhé?" },
-  error: { en: "The Wi-Fi in this room is acting up again. Say that again?", vi: "Mạng phòng trọ lại chập chờn. Bạn nói lại giúp Mony nhé?" },
+  tired: { en: "We talked a lot today. Let me get back to work. See you tomorrow.", vi: "Hôm nay mình nói nhiều rồi, để Mony đi làm tiếp. Mai nói tiếp nhé.", mood: "tired" },
+  broke: { en: "My mouth is out of electricity for today. Talk tomorrow?", vi: "Hôm nay hết tiền điện cho cái miệng này rồi. Mai nói tiếp nhé?", mood: "tired" },
+  pass: { en: "I'd rather not talk about that. Something else?", vi: "Chuyện đó Mony xin phép không nói. Mình nói chuyện khác nhé?", mood: "shy" },
+  error: { en: "The Wi-Fi in this room is acting up again. Say that again?", vi: "Mạng phòng trọ lại chập chờn. Bạn nói lại giúp Mony nhé?", mood: "worried" },
 };
 
 type Turn = { role: "user" | "assistant"; content: string };
@@ -50,14 +51,15 @@ function parse(text: string): Line | null {
   const m = text.match(/\{[\s\S]*\}/);
   if (m) {
     try {
-      const o = JSON.parse(m[0]) as { en?: unknown; vi?: unknown };
+      const o = JSON.parse(m[0]) as { en?: unknown; vi?: unknown; mood?: unknown };
       const en = clean(o.en, 400);
-      if (en) return { en, vi: clean(o.vi, 400) };
+      const mood = typeof o.mood === "string" && MOODS.includes(o.mood.toLowerCase()) ? o.mood.toLowerCase() : "neutral";
+      if (en) return { en, vi: clean(o.vi, 400), mood };
     } catch {}
   }
   // Model không trả JSON thì dùng nguyên câu làm lời tiếng Anh
   const en = clean(text, 400);
-  return en ? { en, vi: "" } : null;
+  return en ? { en, vi: "", mood: "neutral" } : null;
 }
 
 export async function POST(request: Request) {

@@ -865,20 +865,30 @@ setInterval(load, 60000);
     return out.concat(base);
   }
   let lineIdx = 0;
-  // sub: phụ đề tiếng Việt khi Mony nói tiếng Anh
-  function say(text, sub) {
+  // Giọng đổi theo cảm xúc: tốc độ và độ cao
+  const MOOD_VOICE = { happy: [1.05, 1.0], laugh: [1.1, 1.1], sad: [0.82, 0.7], tired: [0.78, 0.65], surprised: [1.1, 1.2],
+    shy: [0.9, 0.95], worried: [1.0, 0.9], angry: [1.05, 0.7], neutral: [0.95, 0.85] };
+  const MOOD_ICON = { happy: "😊", laugh: "😄", sad: "😢", tired: "😮‍💨", surprised: "😮", shy: "😳", worried: "😟", angry: "😠" };
+  // sub: phụ đề tiếng Việt khi Mony nói tiếng Anh; mood: cảm xúc của câu
+  function say(text, sub, mood) {
     if (MONY.prologueActive) return;
     bubble.style.opacity = "0";
     setTimeout(() => {
-      bubble.textContent = text;
+      bubble.textContent = (MOOD_ICON[mood] ? MOOD_ICON[mood] + " " : "") + text;
       if (sub) { const s = document.createElement("span"); s.className = "sub"; s.textContent = sub; bubble.append(s); }
       bubble.style.opacity = "1";
     }, 200);
-    MONY.voice.speak(text, sub ? { lang: "en", rate: 0.95 } : undefined);
+    const v = MOOD_VOICE[mood] || MOOD_VOICE.neutral;
+    MONY.voice.speak(text, sub ? { lang: "en", rate: v[0], pitch: v[1] } : undefined);
   }
   function nextLine() { if (performance.now() < (MONY.quietUntil || 0)) return; const l = lines(); say(l[lineIdx++ % l.length]); }
   // Câu trả lời khi khách nói chuyện: tạm ngừng lời độc thoại một lúc để khách kịp đọc
-  MONY.say = (text, sub) => { MONY.quietUntil = performance.now() + 25000; if (MONY.onTalk) MONY.onTalk(); say(text, sub); };
+  MONY.say = (text, sub, mood) => {
+    MONY.quietUntil = performance.now() + 25000;
+    MONY.mood = { name: mood || "neutral", until: MONY.quietUntil };
+    if (MONY.onTalk) MONY.onTalk();
+    say(text, sub, mood);
+  };
 
   function useFallback() {
     canvas.hidden = true;
@@ -1363,14 +1373,22 @@ setInterval(load, 60000);
   for (const x of [-0.022, 0, 0.022]) scar.add(box(0.004, 0.022, 0.006, toon(0xb86a5c), x, 0, 0.002));
   scar.position.set(0.105, -0.045, 0.19); scar.rotation.set(0, 0.5, 0.55);
   head.add(scar);
-  const eyes = [];
+  const eyes = [], brows = [], blush = [];
   for (const side of [-1, 1]) {
     const e = mesh(new THREE.SphereGeometry(0.03, 10, 8), M.black, side * 0.08, 0.0, 0.2); e.scale.z = 0.5; eyes.push(e); head.add(e);
-    const brow = box(0.085, 0.022, 0.012, M.hair, side * 0.08, 0.062, 0.21); brow.rotation.z = side * -0.35; head.add(brow);
+    const brow = box(0.085, 0.022, 0.012, M.hair, side * 0.08, 0.062, 0.21); brow.rotation.z = side * -0.35; brow.userData.side = side; brows.push(brow); head.add(brow);
     head.add(mesh(new THREE.SphereGeometry(0.045, 10, 8), M.skin, side * 0.22, 0, 0));
+    const b = mesh(new THREE.CircleGeometry(0.035, 14), new THREE.MeshBasicMaterial({ color: 0xf08a8a, transparent: true, opacity: 0.55 }), side * 0.125, -0.05, 0.19);
+    b.rotation.y = side * 0.55; b.visible = false; blush.push(b); head.add(b);
   }
   const mouth = mesh(new THREE.TorusGeometry(0.035, 0.01, 6, 12, Math.PI), M.black, 0, -0.1, 0.205);
   head.add(mouth);
+  // Cảm xúc: miệng chữ O khi ngạc nhiên, giọt nước mắt khi buồn, giọt mồ hôi khi lo hoặc ngại
+  const mouthO = mesh(new THREE.TorusGeometry(0.022, 0.009, 6, 14), M.black, 0, -0.11, 0.205); mouthO.visible = false; head.add(mouthO);
+  const tearDrop = mesh(new THREE.SphereGeometry(0.014, 8, 6), new THREE.MeshBasicMaterial({ color: 0x8fd0ff, transparent: true }), -0.09, -0.03, 0.2);
+  tearDrop.scale.y = 1.5; tearDrop.visible = false; head.add(tearDrop);
+  const sweat = mesh(new THREE.SphereGeometry(0.02, 8, 6), new THREE.MeshBasicMaterial({ color: 0xbfe6ff }), 0.17, 0.1, 0.15);
+  sweat.scale.y = 1.5; sweat.visible = false; head.add(sweat);
   head.add(mesh(new THREE.SphereGeometry(0.028, 10, 8), toon(0xc9946c), 0, -0.035, 0.22));
   const arms = [-1, 1].map((side) => {
     const upper = limb(0.075, M.hoodie), fore = limb(0.065, M.hoodie);
@@ -1570,9 +1588,30 @@ setInterval(load, 60000);
     mony.position.y = SEAT.y + (standing ? 0.36 + Math.abs(Math.sin(t * 8)) * 0.12 * m : 0);
     mouth.rotation.z = cur === "cheer" || turning ? Math.PI : 0;
 
-    // Mắt: chớp, hoặc nhắm khi ngủ
+    // Cảm xúc theo câu trả lời gần nhất khi nói chuyện với khách
+    const md = !asleep && MONY.mood && now < MONY.mood.until ? MONY.mood.name : "neutral";
+    const smile = md === "happy" || md === "laugh" || md === "shy";
+    const frown = md === "sad" || md === "tired" || md === "worried" || md === "angry";
+    if (smile) mouth.rotation.z = Math.PI; else if (frown) mouth.rotation.z = 0;
+    mouth.visible = md !== "surprised"; mouthO.visible = md === "surprised";
+    mouth.scale.setScalar(md === "laugh" ? 1.4 + Math.abs(Math.sin(t * 14)) * 0.3 * m : 1);
+    const BROW = { sad: [-0.6, 0.068], worried: [-0.55, 0.066], tired: [-0.15, 0.05], angry: [0.45, 0.05], surprised: [-0.15, 0.09], happy: [-0.2, 0.068], laugh: [-0.2, 0.07] }[md] || [-0.35, 0.062];
+    brows.forEach((b) => { b.rotation.z += (b.userData.side * BROW[0] - b.rotation.z) * 0.15; b.position.y += (BROW[1] - b.position.y) * 0.15; });
+    blush.forEach((b) => (b.visible = md === "shy" || md === "laugh"));
+    tearDrop.visible = md === "sad" && !reduce;
+    if (tearDrop.visible) { const p = (t * 0.5) % 1; tearDrop.position.y = -0.03 - p * 0.12; tearDrop.material.opacity = 1 - p; }
+    sweat.visible = md === "worried" || md === "shy";
+    if (sweat.visible) sweat.position.y = 0.1 - ((t * 0.3) % 1) * 0.06 * m;
+    if (md !== "neutral" && turning) {
+      const hx = md === "sad" || md === "tired" ? 0.3 : md === "surprised" ? -0.15 : md === "laugh" ? -0.1 + Math.sin(t * 14) * 0.04 * m : null;
+      if (hx !== null) head.rotation.x += (hx - head.rotation.x) * 0.15;
+      if (md === "shy") head.rotation.z = 0.15;
+    }
+
+    // Mắt: chớp, hoặc nhắm khi ngủ; nheo khi cười, mở to khi ngạc nhiên
     const sb = now - nextBlink;
-    eyes.forEach((e) => (e.scale.y = asleep || (sb > 0 && sb < 130) ? 0.15 : 1));
+    const eyeY = md === "laugh" ? 0.25 : md === "happy" ? 0.55 : md === "tired" ? 0.45 : md === "surprised" ? 1.4 : 1;
+    eyes.forEach((e) => (e.scale.y = asleep || (sb > 0 && sb < 130) ? 0.15 : eyeY));
     if (sb > 130) nextBlink = now + 2500 + Math.random() * 3500;
 
     // Z bay lên khi ngủ
@@ -1763,7 +1802,7 @@ setInterval(load, 60000);
     history.push({ role: "user", content: text });
     MONY.quietUntil = performance.now() + 30000;
     bubble.textContent = "…";
-    let reply, sub = "";
+    let reply, sub = "", mood = "neutral";
     try {
       const r = await fetch(CONFIG.apiBase + "/talk", {
         method: "POST", headers: { "content-type": "application/json" },
@@ -1772,6 +1811,7 @@ setInterval(load, 60000);
       const data = await r.json();
       reply = data.en || "Sorry, I didn't catch that. Say it again?";
       sub = data.en ? data.vi || "" : "Mony chưa nghe rõ. Bạn nói lại nhé?";
+      mood = data.mood || "neutral";
       if (r.ok) history.push({ role: "assistant", content: reply }); else history.pop();
       note.textContent = typeof data.left === "number" && data.left <= 5
         ? "Hôm nay bạn còn " + data.left + " lượt nói chuyện với Mony."
@@ -1780,9 +1820,10 @@ setInterval(load, 60000);
       history.pop();
       reply = "The Wi-Fi in this room is acting up again. Say that again?";
       sub = "Mạng phòng trọ lại chập chờn. Bạn nói lại giúp Mony nhé?";
+      mood = "worried";
     }
     save();
-    MONY.say ? MONY.say(reply, sub) : (bubble.textContent = reply);
+    MONY.say ? MONY.say(reply, sub, mood) : (bubble.textContent = reply);
     busy = false; send.disabled = false;
   }
 
