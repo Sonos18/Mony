@@ -36,6 +36,15 @@ const SCHEMA = [
      description TEXT,
      status TEXT NOT NULL DEFAULT 'planned' CHECK (status IN ('planned', 'running', 'paused')),
      compliance TEXT NOT NULL DEFAULT 'review' CHECK (compliance IN ('verified', 'review', 'blocked')))`,
+  `CREATE TABLE IF NOT EXISTS talk_usage (
+     day DATE NOT NULL,
+     id_hash TEXT NOT NULL,
+     n INTEGER NOT NULL DEFAULT 0,
+     PRIMARY KEY (day, id_hash))`,
+  `CREATE TABLE IF NOT EXISTS talk_spend (
+     day DATE PRIMARY KEY,
+     cost_vnd DOUBLE PRECISION NOT NULL DEFAULT 0,
+     ledger_id INTEGER)`,
   `INSERT INTO sources (id, name, description, status, compliance) VALUES
      ('own-services', 'Dịch vụ tự làm', 'Viết content, landing page, trả lời khách giúp shop', 'planned', 'verified'),
      ('affiliate', 'Affiliate chính thức', 'Giới thiệu phần mềm và sản phẩm số qua chương trình affiliate công khai', 'planned', 'verified'),

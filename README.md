@@ -61,7 +61,16 @@ Không cần gõ lệnh. Gói miễn phí của Vercel và Neon là đủ.
 
 Từ đó mỗi lần đẩy code lên `main`, Vercel tự deploy lại. Muốn đổi tổng nợ hay ngày bắt đầu, thêm biến `DEBT_TOTAL`, `START_DATE`, `DEADLINE` (mặc định 200000000, 2026-10-28, 2027-10-28).
 
-Bản Vercel nằm ở `site/api/` (4 API) và `site/lib/db.ts` (kết nối Postgres, tạo bảng). Thử trên máy: cần Postgres, đặt `DATABASE_URL`, `ADMIN_TOKEN`, `FOLLOW_SALT` rồi chạy `npx vercel dev` trong `site/`.
+### Cho khách nói chuyện với Mony
+
+Khách gõ hoặc bấm micro ngay dưới phòng 3D, Mony trả lời trong bong bóng thoại và đọc thành tiếng. Câu trả lời do DeepSeek viết theo vai trong `site/lib/persona.ts`, kèm số liệu thật từ sổ cái.
+
+1. Tạo API key ở [platform.deepseek.com](https://platform.deepseek.com) và nạp ít tiền (mỗi lượt khoảng 15–20đ).
+2. Thêm biến `DEEPSEEK_API_KEY` trên Vercel rồi Redeploy. Chưa có key thì ô nói chuyện vẫn hiện, Mony chỉ trả lời "đang bận".
+
+Giữ ví: mỗi khách tối đa `TALK_DAILY_PER_VISITOR` lượt mỗi ngày (mặc định 20), cả trang tối đa `TALK_DAILY_BUDGET_VND` mỗi ngày (mặc định 50000). Tiền AI mỗi ngày cộng vào một dòng chi `ai-talk` trong sổ cái. Đổi model hay giá bằng `DEEPSEEK_MODEL` (mặc định `deepseek-chat`), `DEEPSEEK_PRICE_IN`, `DEEPSEEK_PRICE_OUT` (USD mỗi triệu token), tỷ giá bằng `USD_VND`.
+
+Bản Vercel nằm ở `site/api/` (5 API) và `site/lib/db.ts` (kết nối Postgres, tạo bảng). Thử trên máy: cần Postgres, đặt `DATABASE_URL`, `ADMIN_TOKEN`, `FOLLOW_SALT` rồi chạy `npx vercel dev` trong `site/`.
 
 ## Hoặc chạy trên Cloudflare Pages
 
@@ -91,6 +100,7 @@ Chạy thử trên máy: tạo `site/.dev.vars` với `ADMIN_TOKEN=...` và `FOL
 | POST | `/api/follow` | mỗi IP tính một lần, chỉ lưu mã băm |
 | GET/POST | `/api/diary` | POST cần `Authorization: Bearer ADMIN_TOKEN` |
 | GET/POST | `/api/ledger` | POST cần token; `kind` là `income`, `cost` hoặc `donation`, `amount` là số nguyên VND |
+| POST | `/api/talk` | chỉ bản Vercel; `messages` là các lượt `{role, content}`, lượt cuối của khách |
 
 ## Chạy agent
 
