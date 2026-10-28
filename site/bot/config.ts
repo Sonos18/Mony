@@ -13,9 +13,10 @@ export const config = {
     // Model cho việc nhẹ như Mony nói chuyện trên trang, cùng nhóm hạn mức với model dự phòng
     lightModel: process.env.LLM_LIGHT_MODEL ?? "gpt-5.4-nano",
     lightEffort: process.env.LLM_LIGHT_EFFORT ?? "low",
-    // Tuỳ chọn: cho việc nhẹ chạy ở nhà cung cấp khác có API chuẩn OpenAI (ví dụ GLM-4.7-Flash miễn phí của Z.ai)
-    lightBaseUrl: process.env.LLM_LIGHT_BASE_URL ?? "",
-    lightApiKey: process.env.LLM_LIGHT_API_KEY ?? "",
+    // Việc nhẹ hết hạn mức miễn phí của OpenAI thì chuyển sang model miễn phí của Z.ai (chỉ khi có ZAI_API_KEY)
+    overflowBaseUrl: process.env.LLM_OVERFLOW_BASE_URL ?? "https://api.z.ai/api/paas/v4",
+    overflowApiKey: process.env.ZAI_API_KEY ?? "",
+    overflowModel: process.env.LLM_OVERFLOW_MODEL ?? "glm-4.7-flash",
     // VND cho 1 triệu token. Để 0 khi còn trong hạn mức miễn phí.
     priceInPerM: Number(process.env.LLM_PRICE_IN_PER_M ?? 0),
     priceOutPerM: Number(process.env.LLM_PRICE_OUT_PER_M ?? 0),

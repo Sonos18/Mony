@@ -130,7 +130,7 @@ Bot tự viết nhật ký lúc 21:00 giờ Việt Nam mỗi ngày từ số li�
 
 - Mặc định dùng `gpt-5.4-nano` với mức suy luận thấp, chung hạn mức miễn phí 2,5 triệu token/ngày của nhóm model nhỏ với bot, dùng chung `OPENAI_API_KEY`. Hết hạn mức thì Mony nghỉ đến hôm sau.
 - Mỗi khách tối đa 20 lượt mỗi ngày (`TALK_DAILY_PER_VISITOR`).
-- Muốn chạy bằng model miễn phí khác có API chuẩn OpenAI, ví dụ GLM-4.7-Flash của Z.ai, thêm trên Vercel: `LLM_LIGHT_BASE_URL=https://api.z.ai/api/paas/v4`, `LLM_LIGHT_API_KEY=<key z.ai>`, `LLM_LIGHT_MODEL=glm-4.7-flash`. Lưu ý dữ liệu khách khi đó gửi sang máy chủ của Z.ai, và cần sửa dòng ghi chú dưới ô nói chuyện trong `public/index.html` cho đúng.
+- Hết hạn mức miễn phí của nano thì tự chuyển sang GLM-4.7-Flash miễn phí của Z.ai, nếu trên Vercel có biến `ZAI_API_KEY` (key lấy ở z.ai). Đổi model bằng `LLM_OVERFLOW_MODEL`, đổi endpoint bằng `LLM_OVERFLOW_BASE_URL`. Không có key thì Mony nghỉ đến hôm sau.
 
 ## Thêm nguồn kiếm tiền
 

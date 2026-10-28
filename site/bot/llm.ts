@@ -11,26 +11,28 @@ export type Message = { role: "system" | "user" | "assistant"; content: string }
 const POOL_SMALL = "small-models";
 const poolOf = (model: string) => (model === config.llm.model ? model : POOL_SMALL);
 
-async function pickModel(light?: boolean): Promise<string> {
-  const { model, dailyTokens, fallbackModel, fallbackDailyTokens, lightModel } = config.llm;
+type Pick = { model: string; baseUrl: string; apiKey: string; external: boolean };
+
+async function pickModel(light?: boolean): Promise<Pick> {
+  const { model, dailyTokens, fallbackModel, fallbackDailyTokens, lightModel, baseUrl, apiKey } = config.llm;
+  const openai = (m: string): Pick => ({ model: m, baseUrl, apiKey, external: false });
   const smallLeft = (await tokensToday(POOL_SMALL)) < fallbackDailyTokens;
-  // Việc nhẹ (nói chuyện trên trang) dùng model nhỏ nhất, để dành hạn mức của model chính cho việc thật
+  // Việc nhẹ (nói chuyện trên trang) dùng model nhỏ nhất, để dành hạn mức của model chính cho việc thật.
+  // Hết hạn mức miễn phí thì chuyển sang Z.ai, nơi tự giới hạn lượt dùng miễn phí.
   if (light) {
-    if (smallLeft) return lightModel;
+    if (smallLeft) return openai(lightModel);
+    const { overflowBaseUrl, overflowApiKey, overflowModel } = config.llm;
+    if (overflowApiKey) return { model: overflowModel, baseUrl: overflowBaseUrl, apiKey: overflowApiKey, external: true };
   } else {
-    if ((await tokensToday(model)) < dailyTokens) return model;
-    if (fallbackModel && smallLeft) return fallbackModel;
+    if ((await tokensToday(model)) < dailyTokens) return openai(model);
+    if (fallbackModel && smallLeft) return openai(fallbackModel);
   }
   throw new Error("Hết hạn mức token miễn phí hôm nay, mai Mony làm tiếp");
 }
 
 export async function chat(messages: Message[], opts: { maxTokens?: number; light?: boolean; json?: boolean } = {}): Promise<string> {
-  // Việc nhẹ có nhà cung cấp riêng thì gọi thẳng đó, hạn mức do nhà cung cấp đó tự giới hạn
-  const external = !!(opts.light && config.llm.lightBaseUrl && config.llm.lightApiKey);
-  const baseUrl = external ? config.llm.lightBaseUrl : config.llm.baseUrl;
-  const apiKey = external ? config.llm.lightApiKey : config.llm.apiKey;
-  if (!apiKey) throw new Error("Thiếu OPENAI_API_KEY");
-  const model = external ? config.llm.lightModel : await pickModel(opts.light);
+  if (!config.llm.apiKey) throw new Error("Thiếu OPENAI_API_KEY");
+  const { model, baseUrl, apiKey, external } = await pickModel(opts.light);
   // Các model GPT-5 trở đi dùng max_completion_tokens (gồm cả token suy luận), không nhận max_tokens.
   // Việc nhẹ thì bớt suy luận, vì token suy luận cũng bị tính vào hạn mức.
   const body: Record<string, unknown> = {

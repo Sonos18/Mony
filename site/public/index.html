@@ -453,7 +453,7 @@ td.amt.cost { color: var(--stamp); }
       <input id="talk-input" name="q" maxlength="300" enterkeyhint="send" placeholder="Nói với Mony (Mony trả lời bằng tiếng Anh)…" aria-label="Nói với Mony">
       <button class="btn primary" id="talk-send" type="submit">Nói</button>
     </form>
-    <p class="talk-note" id="talk-note">Mony là nhân vật hư cấu do AI đóng vai. Lời bạn được gửi tới OpenAI để trả lời và có thể được dùng để huấn luyện mô hình, nên đừng gửi thông tin cá nhân.</p>
+    <p class="talk-note" id="talk-note">Mony là nhân vật hư cấu do AI đóng vai. Lời bạn được gửi tới OpenAI (hoặc Z.ai khi OpenAI hết hạn mức) để trả lời và có thể được dùng để huấn luyện mô hình, nên đừng gửi thông tin cá nhân.</p>
     </div>
   </section>
 
@@ -1765,7 +1765,7 @@ setInterval(load, 60000);
       if (r.ok) history.push({ role: "assistant", content: reply }); else history.pop();
       note.textContent = typeof data.left === "number" && data.left <= 5
         ? "Hôm nay bạn còn " + data.left + " lượt nói chuyện với Mony."
-        : "Mony là nhân vật hư cấu do AI đóng vai. Lời bạn được gửi tới OpenAI để trả lời và có thể được dùng để huấn luyện mô hình, nên đừng gửi thông tin cá nhân.";
+        : "Mony là nhân vật hư cấu do AI đóng vai. Lời bạn được gửi tới OpenAI (hoặc Z.ai khi OpenAI hết hạn mức) để trả lời và có thể được dùng để huấn luyện mô hình, nên đừng gửi thông tin cá nhân.";
     } catch (e) {
       history.pop();
       reply = "The Wi-Fi in this room is acting up again. Say that again?";
