@@ -208,6 +208,7 @@ td.amt.income, td.amt.donation { color: var(--green); }
 td.amt.cost { color: var(--stamp); }
 
 .modal { border: 0; padding: 0; background: var(--sheet); color: var(--ink); border-radius: 12px; width: min(560px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+.donate-lead { margin: 0; font: 400 1.05rem/1.45 var(--f-hand); }
 .modal::backdrop { background: rgba(10,12,20,.6); }
 .modal-in { padding: 18px 18px 20px; display: grid; gap: 14px; }
 .modal-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
@@ -519,6 +520,7 @@ td.amt.cost { color: var(--stamp); }
   <dialog class="modal" id="donate-modal" aria-labelledby="donate-modal-title">
     <div class="modal-in">
       <div class="modal-head"><h2 id="donate-modal-title">Ủng hộ Mony</h2><button class="x" id="close-donate" type="button" aria-label="Đóng">✕</button></div>
+      <p class="donate-lead" id="donate-lead" hidden></p>
       <p class="meta" style="margin:0">Quét mã bằng app ngân hàng, hoặc chép số tài khoản. Mọi khoản đều vào sổ cái.</p>
       <div class="donate" id="donate-modal-box"></div>
     </div>
@@ -814,7 +816,14 @@ renderStats(FALLBACK.stats); renderDiary(FALLBACK.diary); renderLedger([]); rend
 (function () {
   const dlg = $("donate-modal"), opener = $("open-donate");
   if (typeof dlg.showModal !== "function") return;
-  opener.addEventListener("click", (e) => { e.preventDefault(); dlg.showModal(); $("close-donate").focus(); });
+  const lead = $("donate-lead");
+  opener.addEventListener("click", (e) => { e.preventDefault(); lead.hidden = true; dlg.showModal(); $("close-donate").focus(); });
+  // Mở hộp thoại kèm một lời của Mony (dùng khi khách đã nói chuyện được một lúc)
+  MONY.openDonate = (text) => {
+    if (dlg.open) return;
+    lead.textContent = text; lead.hidden = !text;
+    dlg.showModal(); $("close-donate").focus();
+  };
   $("close-donate").addEventListener("click", () => dlg.close());
   dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });
   dlg.addEventListener("close", () => opener.focus());
@@ -1748,6 +1757,7 @@ setInterval(load, 60000);
   async function ask(text) {
     text = text.trim();
     if (!text || busy) return;
+    ticking = true;
     busy = true; send.disabled = true; input.value = "";
     if (MONY.prologueActive) $("skip").click();
     history.push({ role: "user", content: text });
@@ -1777,6 +1787,24 @@ setInterval(load, 60000);
   }
 
   form.addEventListener("submit", (e) => { e.preventDefault(); ask(input.value); });
+
+  // Nhắc ủng hộ khi khách đã nói chuyện 1 phút, rồi ở các mốc 5, 10, 15 phút…
+  // Chỉ tính thời gian trang đang mở trước mắt khách, và nhớ trong phiên để tải lại trang không bị nhắc lại từ đầu.
+  let talked = 0, nextAt = 1;
+  try { const t = JSON.parse(sessionStorage.getItem("mony.talkTime") || "null"); if (t) { talked = t.talked; nextAt = t.nextAt; } } catch {}
+  let ticking = history.length > 0;
+  setInterval(() => {
+    if (!ticking || document.hidden) return;
+    talked++;
+    if (talked >= nextAt * 60 && !busy && MONY.openDonate) {
+      const min = nextAt;
+      nextAt = nextAt === 1 ? 5 : nextAt + 5;
+      MONY.openDonate(min === 1
+        ? "Cảm ơn bạn đã ngồi nói chuyện với Mony. Nếu thấy vui, bạn có thể ủng hộ tuỳ tâm. Không ủng hộ cũng không sao, cứ nói tiếp nhé."
+        : "Mình nói chuyện được " + min + " phút rồi đấy. Nếu thấy Mony đáng một ly trà đá, bạn ủng hộ tuỳ tâm nhé. Không thì bấm đóng và nói tiếp thôi.");
+    }
+    try { sessionStorage.setItem("mony.talkTime", JSON.stringify({ talked, nextAt })); } catch {}
+  }, 1000);
 
   // Micro: dùng nhận dạng giọng nói của trình duyệt (Chrome, Edge, Safari)
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
