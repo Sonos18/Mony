@@ -10,6 +10,12 @@ export const config = {
     dailyTokens: Number(process.env.LLM_DAILY_TOKENS ?? 230_000),
     fallbackModel: process.env.LLM_FALLBACK_MODEL ?? "gpt-5.4-mini",
     fallbackDailyTokens: Number(process.env.LLM_FALLBACK_DAILY_TOKENS ?? 2_300_000),
+    // Model cho việc nhẹ như Mony nói chuyện trên trang, cùng nhóm hạn mức với model dự phòng
+    lightModel: process.env.LLM_LIGHT_MODEL ?? "gpt-5.4-nano",
+    lightEffort: process.env.LLM_LIGHT_EFFORT ?? "low",
+    // Tuỳ chọn: cho việc nhẹ chạy ở nhà cung cấp khác có API chuẩn OpenAI (ví dụ GLM-4.7-Flash miễn phí của Z.ai)
+    lightBaseUrl: process.env.LLM_LIGHT_BASE_URL ?? "",
+    lightApiKey: process.env.LLM_LIGHT_API_KEY ?? "",
     // VND cho 1 triệu token. Để 0 khi còn trong hạn mức miễn phí.
     priceInPerM: Number(process.env.LLM_PRICE_IN_PER_M ?? 0),
     priceOutPerM: Number(process.env.LLM_PRICE_OUT_PER_M ?? 0),

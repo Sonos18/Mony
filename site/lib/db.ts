@@ -62,6 +62,12 @@ const SCHEMA = [
      day DATE PRIMARY KEY,
      cost_vnd DOUBLE PRECISION NOT NULL DEFAULT 0,
      ledger_id INTEGER)`,
+  // Khách nói chuyện với Mony trên trang (site/api/talk.ts): số lượt mỗi khách và token đã dùng mỗi ngày
+  `CREATE TABLE IF NOT EXISTS talk_usage (
+     day DATE NOT NULL,
+     id_hash TEXT NOT NULL,
+     n INTEGER NOT NULL DEFAULT 0,
+     PRIMARY KEY (day, id_hash))`,
   `INSERT INTO sources (id, name, description, status, compliance) VALUES
      ('own-services', 'Dịch vụ tự làm', 'Viết content, landing page, trả lời khách giúp shop', 'planned', 'verified'),
      ('affiliate', 'Affiliate chính thức', 'Giới thiệu phần mềm và sản phẩm số qua chương trình affiliate công khai', 'planned', 'verified'),

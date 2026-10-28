@@ -124,6 +124,14 @@ Lệnh Telegram (vẫn dùng được khi gõ tay):
 
 Bot tự viết nhật ký lúc 21:00 giờ Việt Nam mỗi ngày từ số liệu thật (cron của Vercel gọi `/api/cron-diary`; gói free chạy một lần mỗi ngày, có thể lệch trong vòng một giờ). Ngày nào đã có nhật ký thì bỏ qua.
 
+## Mony nói chuyện với khách trên trang
+
+Ô "Nói với Mony" dưới khung cảnh gọi `/api/talk`. Mony trả lời bằng tiếng Anh như nhân vật trong phim, kèm phụ đề tiếng Việt, và đọc câu tiếng Anh bằng giọng có sẵn của máy (máy nào cũng có giọng tiếng Anh). Khách gõ hoặc nói tiếng Việt đều được.
+
+- Mặc định dùng `gpt-5.4-nano` với mức suy luận thấp, chung hạn mức miễn phí 2,5 triệu token/ngày của nhóm model nhỏ với bot, dùng chung `OPENAI_API_KEY`. Hết hạn mức thì Mony nghỉ đến hôm sau.
+- Mỗi khách tối đa 20 lượt mỗi ngày (`TALK_DAILY_PER_VISITOR`).
+- Muốn chạy bằng model miễn phí khác có API chuẩn OpenAI, ví dụ GLM-4.7-Flash của Z.ai, thêm trên Vercel: `LLM_LIGHT_BASE_URL=https://api.z.ai/api/paas/v4`, `LLM_LIGHT_API_KEY=<key z.ai>`, `LLM_LIGHT_MODEL=glm-4.7-flash`. Lưu ý dữ liệu khách khi đó gửi sang máy chủ của Z.ai, và cần sửa dòng ghi chú dưới ô nói chuyện trong `public/index.html` cho đúng.
+
 ## Thêm nguồn kiếm tiền
 
 1. Tạo `site/bot/suppliers/<ten>.ts` theo giao diện `SupplierAdapter` trong `types.ts`.
