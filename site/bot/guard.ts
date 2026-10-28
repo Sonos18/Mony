@@ -14,10 +14,9 @@ export function canOffer(p: Product, s: SupplierAdapter, amountVnd: number): Ver
 }
 
 // Giới hạn tin nhắn để không bị nền tảng coi là spam: mỗi người tối đa 20 tin trong 10 phút.
-const hits = new Map<string, number[]>();
-export function allowMessage(userId: string, now = Date.now()): boolean {
-  const recent = (hits.get(userId) ?? []).filter((t) => now - t < 10 * 60_000);
+// Nhận danh sách mốc thời gian đã lưu, trả về danh sách mới và có cho qua hay không.
+export function allowMessage(hits: number[], now = Date.now()): { ok: boolean; hits: number[] } {
+  const recent = hits.filter((t) => now - t < 10 * 60_000);
   recent.push(now);
-  hits.set(userId, recent);
-  return recent.length <= 20;
+  return { ok: recent.length <= 20, hits: recent };
 }

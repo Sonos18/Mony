@@ -36,6 +36,31 @@ const SCHEMA = [
      description TEXT,
      status TEXT NOT NULL DEFAULT 'planned' CHECK (status IN ('planned', 'running', 'paused')),
      compliance TEXT NOT NULL DEFAULT 'review' CHECK (compliance IN ('verified', 'review', 'blocked')))`,
+  // Trạng thái của bot Telegram (site/bot): mỗi tin có thể do một hàm Vercel khác xử lý nên không giữ trong bộ nhớ
+  `CREATE TABLE IF NOT EXISTS orders (
+     id TEXT PRIMARY KEY,
+     chat_id BIGINT NOT NULL,
+     supplier_id TEXT NOT NULL,
+     sku TEXT NOT NULL,
+     qty INTEGER NOT NULL,
+     total_vnd BIGINT NOT NULL,
+     cost_vnd BIGINT NOT NULL,
+     brief TEXT NOT NULL,
+     status TEXT NOT NULL,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now())`,
+  `CREATE TABLE IF NOT EXISTS chat_state (
+     chat_id BIGINT PRIMARY KEY,
+     history JSONB NOT NULL DEFAULT '[]',
+     hits JSONB NOT NULL DEFAULT '[]')`,
+  `CREATE TABLE IF NOT EXISTS llm_usage (
+     day DATE NOT NULL,
+     model TEXT NOT NULL,
+     tokens BIGINT NOT NULL DEFAULT 0,
+     PRIMARY KEY (day, model))`,
+  `CREATE TABLE IF NOT EXISTS llm_spend (
+     day DATE PRIMARY KEY,
+     cost_vnd DOUBLE PRECISION NOT NULL DEFAULT 0,
+     ledger_id INTEGER)`,
   `INSERT INTO sources (id, name, description, status, compliance) VALUES
      ('own-services', 'Dịch vụ tự làm', 'Viết content, landing page, trả lời khách giúp shop', 'planned', 'verified'),
      ('affiliate', 'Affiliate chính thức', 'Giới thiệu phần mềm và sản phẩm số qua chương trình affiliate công khai', 'planned', 'verified'),

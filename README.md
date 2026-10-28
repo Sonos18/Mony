@@ -23,28 +23,29 @@ Thay vì nhắm thẳng 200 triệu, trang hiện **mốc tiếp theo**. Các m�
 
 Xem thử hiệu ứng bằng cách thêm vào cuối địa chỉ trang: `#thu-ung-ho` (phong bì), `#thu-dem` (ngủ gục), `#thu-moc-0` đến `#thu-moc-10` (nhà ở từng mốc).
 
-Repo gồm hai phần:
+Cả trang lẫn bot nằm trong thư mục `site/` và chạy chung một project Vercel:
 
 | Thư mục | Nội dung |
 |---|---|
-| `site/` | Trang công khai và API lưu số liệu: người theo dõi, nhật ký, sổ cái, nguồn thu, ủng hộ. Chạy trên Vercel + Neon (`api/`, `lib/`) hoặc Cloudflare Pages + D1 (`functions/`) |
-| `agent/` | Agent Node.js: bot Telegram bán dịch vụ, lớp kiểm soát, các nguồn hàng dạng adapter, ghi chi phí AI và nhật ký hằng ngày vào trang |
+| `site/public/`, `site/api/`, `site/lib/` | Trang công khai và API lưu số liệu: người theo dõi, nhật ký, sổ cái, nguồn thu, ủng hộ. Chạy trên Vercel + Neon |
+| `site/bot/` | Bot Telegram bán dịch vụ: lớp kiểm soát, các nguồn hàng dạng adapter, đơn hàng, ghi chi phí AI và nhật ký hằng ngày. Chạy cùng project Vercel qua webhook `site/api/telegram.ts` |
+| `site/functions/` | Bản API cũ cho Cloudflare Pages + D1 (chỉ có trang, không có bot) |
 
 Nguồn bán tài khoản AI đã bị loại khỏi dự án (quyết định ngày 28/10/2026). Lớp kiểm soát chặn mọi SKU gắn nhãn `shared-account`, `account-resale`, `credential`.
 
 ## Kiến trúc
 
 ```
-Telegram ──► Lõi agent (persona Mony) ──► Mô hình GPT (API chính thức của OpenAI)
+Telegram ──► /api/telegram (webhook) ──► Bot (persona Mony) ──► Mô hình GPT (API chính thức của OpenAI)
                  │
                  ▼
           Lớp kiểm soát (guard.ts) ──► Sổ đăng ký nguồn (suppliers/registry.ts)
                  │                        ├─ own-services: dịch vụ tự làm
                  ▼                        └─ affiliate: link giới thiệu chính thức
-          Sổ cái + nhật ký ──► API của trang (site/api hoặc site/functions/api) ──► Postgres hoặc D1
+          Sổ cái, nhật ký, đơn hàng ──► Postgres (Neon), cùng cơ sở dữ liệu với trang
 ```
 
-Mọi khoản thu, chi (kể cả tiền gọi AI) và ủng hộ đều đi qua `POST /api/ledger`, nên số trên trang luôn khớp sổ cái.
+Mọi khoản thu, chi (kể cả tiền gọi AI nếu có) và ủng hộ đều ghi vào bảng `ledger`, nên số trên trang luôn khớp sổ cái.
 
 ## Chạy trang công khai trên Vercel (dễ nhất)
 
@@ -53,7 +54,7 @@ Không cần gõ lệnh. Gói miễn phí của Vercel và Neon là đủ.
 1. Điền tài khoản nhận ủng hộ vào `CONFIG.bank` trong `site/public/index.html` (đã điền sẵn Techcombank).
 2. Vào [vercel.com/new](https://vercel.com/new), đăng nhập bằng GitHub, chọn repo `Mony` rồi bấm Import.
 3. Ở màn hình cấu hình: **Root Directory** chọn `site`, **Framework Preset** để `Other`. Mở **Environment Variables**, thêm:
-   - `ADMIN_TOKEN`: một chuỗi ngẫu nhiên dài (agent dùng để ghi sổ, đừng để lộ).
+   - `ADMIN_TOKEN`: một chuỗi ngẫu nhiên dài (dùng để ghi sổ và bật bot, đừng để lộ).
    - `FOLLOW_SALT`: một chuỗi ngẫu nhiên khác.
 4. Bấm **Deploy**. Trang lên ngay, nhưng số liệu còn là bản xem trước vì chưa có cơ sở dữ liệu.
 5. Trong project vừa tạo, mở tab **Storage**, chọn **Neon** (Postgres), bấm Create và Connect vào project. Vercel tự thêm biến `DATABASE_URL`.
@@ -61,7 +62,7 @@ Không cần gõ lệnh. Gói miễn phí của Vercel và Neon là đủ.
 
 Từ đó mỗi lần đẩy code lên `main`, Vercel tự deploy lại. Muốn đổi tổng nợ hay ngày bắt đầu, thêm biến `DEBT_TOTAL`, `START_DATE`, `DEADLINE` (mặc định 200000000, 2026-10-28, 2027-10-28).
 
-Bản Vercel nằm ở `site/api/` (4 API) và `site/lib/db.ts` (kết nối Postgres, tạo bảng). Thử trên máy: cần Postgres, đặt `DATABASE_URL`, `ADMIN_TOKEN`, `FOLLOW_SALT` rồi chạy `npx vercel dev` trong `site/`.
+Bản Vercel nằm ở `site/api/` (API của trang và webhook bot), `site/bot/` (bot) và `site/lib/db.ts` (kết nối Postgres, tạo bảng). Thử trên máy: cần Postgres, đặt `DATABASE_URL`, `ADMIN_TOKEN`, `FOLLOW_SALT` rồi chạy `npx vercel dev` trong `site/`.
 
 ## Hoặc chạy trên Cloudflare Pages
 
@@ -92,16 +93,21 @@ Chạy thử trên máy: tạo `site/.dev.vars` với `ADMIN_TOKEN=...` và `FOL
 | GET/POST | `/api/diary` | POST cần `Authorization: Bearer ADMIN_TOKEN` |
 | GET/POST | `/api/ledger` | POST cần token; `kind` là `income`, `cost` hoặc `donation`, `amount` là số nguyên VND |
 
-## Chạy agent
+## Bật bot Telegram
 
-```bash
-cd agent
-npm install
-cp .env.example .env      # điền OPENAI_API_KEY, SITE_URL, SITE_ADMIN_TOKEN, TELEGRAM_BOT_TOKEN, TELEGRAM_ADMIN_IDS
-npm start
-```
+Bot chạy ngay trong project Vercel của trang, không cần máy riêng. Mỗi tin Telegram gọi một hàm, gói free (1 triệu lượt mỗi tháng) dư sức.
 
-Mô hình: mặc định gọi thẳng OpenAI bằng `gpt-5.4`. Bật chia sẻ dữ liệu ở platform.openai.com thì mỗi ngày có hạn mức token miễn phí (250 nghìn token cho nhóm gpt-5.4, 2,5 triệu cho nhóm mini). Agent tự đếm token trong ngày: dùng gần hết phần của `gpt-5.4` thì chuyển sang `gpt-5.4-mini`, hết cả hai thì dừng đến hôm sau, nên không phát sinh tiền. Đổi các mức này bằng `LLM_DAILY_TOKENS`, `LLM_FALLBACK_MODEL`, `LLM_FALLBACK_DAILY_TOKENS`. Lưu ý: khi bật chia sẻ dữ liệu, yêu cầu của khách gửi qua bot có thể được OpenAI dùng để huấn luyện, nên nói rõ với khách và đừng nhận tài liệu mật. Muốn dùng nhà cung cấp khác thì trỏ `LLM_BASE_URL` tới endpoint tương thích OpenAI (ví dụ [LiteLLM proxy](https://docs.litellm.ai/)).
+1. Trên Telegram, nhắn [@BotFather](https://t.me/BotFather) lệnh `/newbot` để lấy token bot. Nhắn [@userinfobot](https://t.me/userinfobot) để biết ID Telegram của bạn.
+2. Trên Vercel, vào **Settings → Environment Variables** của project, thêm:
+   - `TELEGRAM_BOT_TOKEN`: token vừa lấy.
+   - `TELEGRAM_ADMIN_IDS`: ID Telegram của chủ trang (nhiều người thì cách nhau dấu phẩy).
+   - `OPENAI_API_KEY`: key OpenAI (nếu chưa có).
+   - `CRON_SECRET`: một chuỗi ngẫu nhiên, để chỉ cron của Vercel gọi được việc viết nhật ký.
+3. Redeploy, rồi mở trên trình duyệt: `https://<tên-miền>/api/telegram?setup=<ADMIN_TOKEN>`. Thấy `"ok": true` là Telegram đã nối vào trang.
+
+Mô hình: mặc định gọi thẳng OpenAI bằng `gpt-5.4`. Bật chia sẻ dữ liệu ở platform.openai.com thì mỗi ngày có hạn mức token miễn phí (250 nghìn token cho nhóm gpt-5.4, 2,5 triệu cho nhóm mini). Bot đếm token trong ngày ở bảng `llm_usage`: dùng gần hết phần của `gpt-5.4` thì chuyển sang `gpt-5.4-mini`, hết cả hai thì nghỉ đến hôm sau, nên không phát sinh tiền. Đổi các mức này bằng `LLM_MODEL`, `LLM_DAILY_TOKENS`, `LLM_FALLBACK_MODEL`, `LLM_FALLBACK_DAILY_TOKENS`; nếu chấp nhận trả tiền, điền giá VND mỗi triệu token vào `LLM_PRICE_IN_PER_M`, `LLM_PRICE_OUT_PER_M` để chi phí tự vào sổ cái. Lưu ý: khi bật chia sẻ dữ liệu, yêu cầu của khách gửi qua bot có thể được OpenAI dùng để huấn luyện, nên nói rõ với khách và đừng nhận tài liệu mật. Muốn dùng nhà cung cấp khác thì trỏ `LLM_BASE_URL` tới endpoint tương thích OpenAI.
+
+Lưu ý điều khoản: gói Hobby của Vercel dành cho dùng cá nhân, phi thương mại. Bot bán dịch vụ là dùng thương mại, nên Vercel có quyền hạn chế project; khi có doanh thu đều thì nên lên gói Pro hoặc chuyển bot sang nơi cho phép dùng thương mại.
 
 Lệnh Telegram:
 
@@ -110,25 +116,24 @@ Lệnh Telegram:
 | `/danhmuc` | khách | xem sản phẩm đã qua lớp kiểm soát |
 | `/canhbao` | khách | 7 dấu hiệu tin tuyển dụng "việc nhẹ lương cao" lừa đảo |
 | `/mua <sku> <yêu cầu>` | khách | tạo đơn, nhận mã đơn để ghi vào nội dung chuyển khoản |
-| `/xacnhan <mã đơn>` | chủ trang | xác nhận đã nhận tiền, agent làm và giao sản phẩm, ghi doanh thu |
+| `/xacnhan <mã đơn>` | chủ trang | xác nhận đã nhận tiền, bot làm và giao sản phẩm, ghi doanh thu |
 | `/hoantien <mã đơn> <lý do>` | chủ trang | ghi khoản hoàn tiền |
 | `/ungho <số tiền> <lời nhắn>` | chủ trang | ghi khoản ủng hộ đã về tài khoản |
 
-Agent tự viết nhật ký lúc 21:00 mỗi ngày từ số liệu thật. Muốn viết ngay: `npm run diary`.
+Bot tự viết nhật ký lúc 21:00 giờ Việt Nam mỗi ngày từ số liệu thật (cron của Vercel gọi `/api/cron-diary`; gói free chạy một lần mỗi ngày, có thể lệch trong vòng một giờ). Ngày nào đã có nhật ký thì bỏ qua.
 
 ## Thêm nguồn kiếm tiền
 
-1. Tạo `agent/src/suppliers/<ten>.ts` theo giao diện `SupplierAdapter` trong `types.ts`.
+1. Tạo `site/bot/suppliers/<ten>.ts` theo giao diện `SupplierAdapter` trong `types.ts`.
 2. Đặt `compliance: "verified"` chỉ khi nguồn đã được kiểm tra điều khoản. Nguồn `review` hoặc `blocked` không được chào bán.
 3. Thêm adapter vào mảng `suppliers` trong `registry.ts`.
-4. Thêm dòng tương ứng vào bảng `sources` trong D1 để trang hiển thị.
+4. Thêm dòng tương ứng vào bảng `sources` (trong `site/lib/db.ts`) để trang hiển thị.
 
 ## Việc nên làm tiếp
 
 - Thay `/xacnhan` thủ công bằng webhook ngân hàng (Casso, PayOS) gọi `/api/ledger`.
-- Chuyển đơn hàng từ file JSON sang D1 khi số đơn tăng.
 - Thêm adapter cho mô hình tự host và đại lý ủy quyền khi đã có hợp đồng.
-- Nếu muốn dùng elizaOS hay CrewAI, giữ nguyên `suppliers/`, `guard.ts`, `site.ts` và chỉ thay `channels/`.
+- Nếu muốn dùng elizaOS hay CrewAI, giữ nguyên `suppliers/`, `guard.ts`, `store.ts` và chỉ thay `channels/`.
 
 ## Lưu ý
 

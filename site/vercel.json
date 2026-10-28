@@ -1,4 +1,8 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "outputDirectory": "public"
+  "outputDirectory": "public",
+  "functions": {
+    "api/telegram.ts": { "maxDuration": 300 },
+    "api/cron-diary.ts": { "maxDuration": 120 }
+  },
+  "crons": [{ "path": "/api/cron-diary", "schedule": "0 14 * * *" }]
 }
