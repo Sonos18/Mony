@@ -29,9 +29,14 @@ export async function POST(request: Request) {
 // Bật webhook một lần sau khi deploy: mở /api/telegram?setup=<ADMIN_TOKEN> trên trình duyệt.
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const token = url.searchParams.get("setup") ?? "";
+  // Đọc thô thay vì searchParams, vì searchParams đổi dấu "+" trong token thành dấu cách
+  const raw = url.search.match(/[?&]setup=([^&]*)/)?.[1] ?? "";
+  let token = raw;
+  try { token = decodeURIComponent(raw); } catch {}
+  token = token.trim();
   const auth = new Request(request.url, { headers: { authorization: `Bearer ${token}` } });
-  if (!isAdmin(auth)) return json({ error: "unauthorized" }, 401);
+  if (!env.ADMIN_TOKEN) return json({ error: "Chưa đặt ADMIN_TOKEN trên Vercel" }, 503);
+  if (!isAdmin(auth)) return json({ error: "unauthorized", hint: "ADMIN_TOKEN trong link không khớp biến trên Vercel" }, 401);
   if (!config.telegram.token) return json({ error: "Thiếu TELEGRAM_BOT_TOKEN" }, 503);
   const b = await getBot();
   const hook = `https://${request.headers.get("x-forwarded-host") ?? url.host}/api/telegram`;
