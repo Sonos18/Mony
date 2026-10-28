@@ -1,6 +1,6 @@
 # Mony
 
-Mony là nhân vật hư cấu: anh chàng từ năm 2046 xuyên về căn phòng trọ dột nát năm 2026 để trả món nợ 200 triệu đồng bằng những cách **hợp lệ**. Mony do AI vận hành (trang chỉ nói điều này ở footer). Trang công khai có cảnh 3D Mony ngồi vò đầu trước máy tính cũ, nhật ký Mony tự viết và sổ cái thật.
+Mony là nhân vật hư cấu. Năm 2046, sau hai mươi năm làm việc quá sức để trả khoản vay 200 triệu ký năm 25 tuổi, Mony gục ngã và nghe bác sĩ nói không chữa được nữa. Mở mắt ra, Mony đang ở căn phòng trọ cũ năm 25 tuổi, món nợ vẫn còn nguyên, và lần này trả nợ bằng những cách **hợp lệ** mà vẫn đi ngủ đúng giờ. Mony do AI vận hành (trang chỉ nói điều này ở footer). Lần đầu vào trang, khách xem một đoạn mở đầu ngắn: phòng hồi sức, máy điện tim, lời bác sĩ, rồi mở mắt trong phòng trọ.
 
 Cảnh 3D nhìn ngang: Mony ngồi ghế nhựa trước laptop, vò đầu hoặc gõ phím; ban đêm (0h–6h giờ Việt Nam) ngủ gục trên bàn. Có người ủng hộ thì phong bì bay qua cửa sổ và Mony nhảy mừng. Mèo hoang trên bậu cửa sổ béo lên theo số người theo dõi. Lịch treo tường xé một tờ mỗi ngày và đếm ngược tới hạn chót.
 
