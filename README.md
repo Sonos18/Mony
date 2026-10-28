@@ -63,12 +63,14 @@ Từ đó mỗi lần đẩy code lên `main`, Vercel tự deploy lại. Muốn 
 
 ### Cho khách nói chuyện với Mony
 
-Khách gõ hoặc bấm micro ngay dưới phòng 3D, Mony trả lời trong bong bóng thoại và đọc thành tiếng. Câu trả lời do DeepSeek viết theo vai trong `site/lib/persona.ts`, kèm số liệu thật từ sổ cái.
+Khách gõ hoặc bấm micro ngay dưới phòng 3D, Mony trả lời trong bong bóng thoại và đọc thành tiếng. Câu trả lời do model mini của OpenAI (mặc định `gpt-5.4-mini`) viết theo vai trong `site/lib/persona.ts`, kèm số liệu thật từ sổ cái.
 
-1. Tạo API key ở [platform.deepseek.com](https://platform.deepseek.com) và nạp ít tiền (mỗi lượt khoảng 15–20đ).
-2. Thêm biến `DEEPSEEK_API_KEY` trên Vercel rồi Redeploy. Chưa có key thì ô nói chuyện vẫn hiện, Mony chỉ trả lời "đang bận".
+1. Ở [platform.openai.com](https://platform.openai.com), bật chia sẻ dữ liệu với OpenAI để được hạn mức token miễn phí mỗi ngày (nhóm model mini: 2,5 triệu token). Tạo API key.
+2. Thêm biến `OPENAI_API_KEY` trên Vercel rồi Redeploy. Chưa có key thì ô nói chuyện vẫn hiện, Mony chỉ trả lời "đang bận".
 
-Giữ ví: mỗi khách tối đa `TALK_DAILY_PER_VISITOR` lượt mỗi ngày (mặc định 20), cả trang tối đa `TALK_DAILY_BUDGET_VND` mỗi ngày (mặc định 50000). Tiền AI mỗi ngày cộng vào một dòng chi `ai-talk` trong sổ cái. Đổi model hay giá bằng `DEEPSEEK_MODEL` (mặc định `deepseek-chat`), `DEEPSEEK_PRICE_IN`, `DEEPSEEK_PRICE_OUT` (USD mỗi triệu token), tỷ giá bằng `USD_VND`.
+Vì bật chia sẻ dữ liệu, lời khách nói được gửi tới OpenAI và có thể dùng để huấn luyện; dòng nhắc dưới ô nói chuyện đã ghi rõ điều này.
+
+Giữ ví: mỗi khách tối đa `TALK_DAILY_PER_VISITOR` lượt mỗi ngày (mặc định 20), cả trang dừng khi dùng hết `TALK_DAILY_TOKENS` token trong ngày (mặc định 2.000.000, dưới hạn mức miễn phí). Nếu dùng model ngoài hạn mức, điền giá vào `OPENAI_PRICE_IN`, `OPENAI_PRICE_OUT` (USD mỗi triệu token): tiền AI mỗi ngày sẽ cộng vào một dòng chi `ai-talk` trong sổ cái và dừng ở `TALK_DAILY_BUDGET_VND` (mặc định 50000). Đổi model bằng `OPENAI_MODEL`.
 
 Bản Vercel nằm ở `site/api/` (5 API) và `site/lib/db.ts` (kết nối Postgres, tạo bảng). Thử trên máy: cần Postgres, đặt `DATABASE_URL`, `ADMIN_TOKEN`, `FOLLOW_SALT` rồi chạy `npx vercel dev` trong `site/`.
 

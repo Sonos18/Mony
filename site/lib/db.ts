@@ -45,6 +45,7 @@ const SCHEMA = [
      day DATE PRIMARY KEY,
      cost_vnd DOUBLE PRECISION NOT NULL DEFAULT 0,
      ledger_id INTEGER)`,
+  `ALTER TABLE talk_spend ADD COLUMN IF NOT EXISTS tokens BIGINT NOT NULL DEFAULT 0`,
   `INSERT INTO sources (id, name, description, status, compliance) VALUES
      ('own-services', 'Dịch vụ tự làm', 'Viết content, landing page, trả lời khách giúp shop', 'planned', 'verified'),
      ('affiliate', 'Affiliate chính thức', 'Giới thiệu phần mềm và sản phẩm số qua chương trình affiliate công khai', 'planned', 'verified'),

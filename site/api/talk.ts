@@ -2,20 +2,22 @@ import { db, env, json, sha256 } from "../lib/db.js";
 import { TALK_PERSONA } from "../lib/persona.js";
 
 // Khách nói chuyện trực tiếp với Mony. Mỗi khách có giới hạn lượt mỗi ngày, cả trang có trần chi tiêu mỗi ngày,
-// và tiền AI cộng dồn vào một dòng "chi" trong sổ cái của ngày đó. Mony trả lời bằng DeepSeek
-// qua API chuẩn Chat Completions.
+// và tiền AI cộng dồn vào một dòng "chi" trong sổ cái của ngày đó. Mony trả lời bằng model
+// mini của OpenAI, nằm trong hạn mức token miễn phí mỗi ngày khi bật chia sẻ dữ liệu với OpenAI.
 const cfg = {
-  key: process.env.DEEPSEEK_API_KEY ?? "",
-  model: process.env.DEEPSEEK_MODEL ?? "deepseek-chat",
-  base: process.env.DEEPSEEK_BASE_URL ?? "https://api.deepseek.com",
+  key: process.env.OPENAI_API_KEY ?? "",
+  model: process.env.OPENAI_MODEL ?? "gpt-5.4-mini",
+  base: process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1",
+  // Hạn mức miễn phí của nhóm model mini là 2,5 triệu token mỗi ngày; chừa lại một khoảng an toàn.
+  dailyTokens: Number(process.env.TALK_DAILY_TOKENS ?? 2_000_000),
   perVisitor: Number(process.env.TALK_DAILY_PER_VISITOR ?? 20),
   budgetVnd: Number(process.env.TALK_DAILY_BUDGET_VND ?? 50000),
   usdVnd: Number(process.env.USD_VND ?? 26000),
 };
 
-// Giá USD cho mỗi triệu token (vào, ra). Đổi bằng biến môi trường khi DeepSeek đổi giá.
-const PRICE_IN = Number(process.env.DEEPSEEK_PRICE_IN ?? 0.28);
-const PRICE_OUT = Number(process.env.DEEPSEEK_PRICE_OUT ?? 0.42);
+// Giá USD cho mỗi triệu token (vào, ra). Mặc định 0 vì nằm trong hạn mức miễn phí; điền giá thật nếu dùng quá hạn mức.
+const PRICE_IN = Number(process.env.OPENAI_PRICE_IN ?? 0);
+const PRICE_OUT = Number(process.env.OPENAI_PRICE_OUT ?? 0);
 
 const LINES = {
   off: "Hôm nay Mony bận chạy việc, chưa nói chuyện được. Bạn quay lại sau nhé.",
@@ -63,19 +65,20 @@ async function factsToday(sql: Awaited<ReturnType<typeof db>>) {
 - Giờ Việt Nam bây giờ: ${new Date(Date.now() + 7 * 3600_000).toISOString().slice(11, 16)}.`;
 }
 
-type Answer = { text: string; refused: boolean; costUsd: number };
+type Answer = { text: string; refused: boolean; costUsd: number; tokens: number };
 
-async function askDeepSeek(system: string, turns: Turn[]): Promise<Answer> {
+async function askOpenAI(system: string, turns: Turn[]): Promise<Answer> {
   const res = await fetch(`${cfg.base}/chat/completions`, {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${cfg.key}` },
-    body: JSON.stringify({ model: cfg.model, max_tokens: 1024, messages: [{ role: "system", content: system }, ...turns] }),
+    body: JSON.stringify({ model: cfg.model, max_completion_tokens: 2000, messages: [{ role: "system", content: system }, ...turns] }),
   });
-  if (!res.ok) throw new Error(`DeepSeek API ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  if (!res.ok) throw new Error(`OpenAI API ${res.status}: ${(await res.text()).slice(0, 300)}`);
   const r = (await res.json()) as { choices?: { message?: { content?: string }; finish_reason?: string }[]; usage?: { prompt_tokens?: number; completion_tokens?: number } };
-  const costUsd = ((r.usage?.prompt_tokens ?? 0) * PRICE_IN + (r.usage?.completion_tokens ?? 0) * PRICE_OUT) / 1e6;
+  const tin = r.usage?.prompt_tokens ?? 0, tout = r.usage?.completion_tokens ?? 0;
+  const costUsd = (tin * PRICE_IN + tout * PRICE_OUT) / 1e6;
   const choice = r.choices?.[0];
-  return { text: (choice?.message?.content ?? "").trim(), refused: choice?.finish_reason === "content_filter", costUsd };
+  return { text: (choice?.message?.content ?? "").trim(), refused: choice?.finish_reason === "content_filter", costUsd, tokens: tin + tout };
 }
 
 export async function POST(request: Request) {
@@ -89,8 +92,8 @@ export async function POST(request: Request) {
   const ip = request.headers.get("x-real-ip") ?? request.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
   const who = await sha256(`talk:${ip}:${env.FOLLOW_SALT}`);
 
-  const [spend] = await sql<{ cost_vnd: number }[]>`SELECT cost_vnd FROM talk_spend WHERE day = ${day}`;
-  if ((spend?.cost_vnd ?? 0) >= cfg.budgetVnd) return json({ reply: LINES.broke, limited: true }, 429);
+  const [spend] = await sql<{ cost_vnd: number; tokens: number }[]>`SELECT cost_vnd, tokens::float8 AS tokens FROM talk_spend WHERE day = ${day}`;
+  if ((spend?.cost_vnd ?? 0) >= cfg.budgetVnd || (spend?.tokens ?? 0) >= cfg.dailyTokens) return json({ reply: LINES.broke, limited: true }, 429);
   const [use] = await sql<{ n: number }[]>`
     INSERT INTO talk_usage (day, id_hash, n) VALUES (${day}, ${who}, 1)
     ON CONFLICT (day, id_hash) DO UPDATE SET n = talk_usage.n + 1 RETURNING n`;
@@ -98,29 +101,30 @@ export async function POST(request: Request) {
 
   let answer: Answer;
   try {
-    answer = await askDeepSeek(`${TALK_PERSONA}\n\n${await factsToday(sql)}`, turns);
+    answer = await askOpenAI(`${TALK_PERSONA}\n\n${await factsToday(sql)}`, turns);
   } catch (e) {
     console.error("talk", e);
     return json({ reply: LINES.error }, 502);
   }
 
   const costVnd = answer.costUsd * cfg.usdVnd;
-  if (costVnd > 0) {
-    await sql.begin(async (tx) => {
-      const [row] = await tx<{ cost_vnd: number; ledger_id: number | null }[]>`
-        INSERT INTO talk_spend (day, cost_vnd) VALUES (${day}, ${costVnd})
-        ON CONFLICT (day) DO UPDATE SET cost_vnd = talk_spend.cost_vnd + ${costVnd} RETURNING cost_vnd, ledger_id`;
-      const amount = Math.ceil(row.cost_vnd);
-      if (row.ledger_id) {
-        await tx`UPDATE ledger SET amount = ${amount} WHERE id = ${row.ledger_id}`;
-      } else {
-        const [l] = await tx<{ id: number }[]>`
-          INSERT INTO ledger (kind, source, amount, note)
-          VALUES ('cost', 'ai-talk', ${amount}, ${`Tiền AI để Mony nói chuyện với khách ngày ${day}`}) RETURNING id`;
-        await tx`UPDATE talk_spend SET ledger_id = ${l.id} WHERE day = ${day}`;
-      }
-    });
-  }
+  await sql.begin(async (tx) => {
+    const [row] = await tx<{ cost_vnd: number; ledger_id: number | null }[]>`
+      INSERT INTO talk_spend (day, cost_vnd, tokens) VALUES (${day}, ${costVnd}, ${answer.tokens})
+      ON CONFLICT (day) DO UPDATE SET cost_vnd = talk_spend.cost_vnd + ${costVnd}, tokens = talk_spend.tokens + ${answer.tokens}
+      RETURNING cost_vnd, ledger_id`;
+    // Còn trong hạn mức miễn phí thì không có gì để ghi sổ
+    if (row.cost_vnd <= 0) return;
+    const amount = Math.ceil(row.cost_vnd);
+    if (row.ledger_id) {
+      await tx`UPDATE ledger SET amount = ${amount} WHERE id = ${row.ledger_id}`;
+    } else {
+      const [l] = await tx<{ id: number }[]>`
+        INSERT INTO ledger (kind, source, amount, note)
+        VALUES ('cost', 'ai-talk', ${amount}, ${`Tiền AI để Mony nói chuyện với khách ngày ${day}`}) RETURNING id`;
+      await tx`UPDATE talk_spend SET ledger_id = ${l.id} WHERE day = ${day}`;
+    }
+  });
 
   const reply = answer.refused || !answer.text ? LINES.pass : answer.text.replace(/[*_#`]/g, "").slice(0, 600);
   return json({ reply, left: Math.max(0, cfg.perVisitor - use.n) });
