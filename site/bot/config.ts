@@ -20,5 +20,11 @@ export const config = {
     apiRoot: process.env.TELEGRAM_API_ROOT || undefined,
     adminIds: (process.env.TELEGRAM_ADMIN_IDS ?? "").split(",").map((s: string) => s.trim()).filter(Boolean),
   },
+  // Tài khoản nhận tiền đơn hàng, giống mục Ủng hộ trên trang
+  bank: {
+    name: process.env.BANK_NAME ?? "Techcombank",
+    account: process.env.BANK_ACCOUNT ?? "81818182222",
+    holder: process.env.BANK_HOLDER ?? "NGUYEN HONG SON",
+  },
   approvalThresholdVnd: Number(process.env.APPROVAL_THRESHOLD_VND ?? 2_000_000),
 };

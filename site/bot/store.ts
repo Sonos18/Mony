@@ -42,8 +42,17 @@ export async function ledgerOn(day: string) {
 // ---- Lịch sử trò chuyện và giới hạn tin nhắn theo từng chat ----
 export async function loadChat(chatId: number) {
   const sql = await db();
-  const [row] = await sql<{ history: Message[]; hits: number[] }[]>`SELECT history, hits FROM chat_state WHERE chat_id = ${chatId}`;
-  return { history: row?.history ?? [], hits: row?.hits ?? [] };
+  const [row] = await sql<{ history: Message[]; hits: number[]; pending_sku: string | null }[]>`
+    SELECT history, hits, pending_sku FROM chat_state WHERE chat_id = ${chatId}`;
+  return { history: row?.history ?? [], hits: row?.hits ?? [], pending: row?.pending_sku ?? null };
+}
+
+// Món khách vừa bấm "Đặt": tin nhắn tiếp theo của khách là yêu cầu cho đơn đó
+export async function setPending(chatId: number, sku: string | null) {
+  const sql = await db();
+  await sql`
+    INSERT INTO chat_state (chat_id, pending_sku) VALUES (${chatId}, ${sku})
+    ON CONFLICT (chat_id) DO UPDATE SET pending_sku = EXCLUDED.pending_sku`;
 }
 
 export async function saveChat(chatId: number, history: Message[], hits: number[]) {

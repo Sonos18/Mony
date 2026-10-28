@@ -109,7 +109,9 @@ Mô hình: mặc định gọi thẳng OpenAI bằng `gpt-5.4`. Bật chia sẻ 
 
 Lưu ý điều khoản: gói Hobby của Vercel dành cho dùng cá nhân, phi thương mại. Bot bán dịch vụ là dùng thương mại, nên Vercel có quyền hạn chế project; khi có doanh thu đều thì nên lên gói Pro hoặc chuyển bot sang nơi cho phép dùng thương mại.
 
-Lệnh Telegram:
+Khách dùng nút bấm: nút "📋 Danh mục" và "⚠️ Cảnh báo lừa đảo" luôn nằm dưới ô chat; trong danh mục, bấm một món để xem chi tiết, bấm "Đặt" rồi nhắn yêu cầu là có đơn kèm thông tin chuyển khoản. Chủ trang nhận tin báo đơn mới có nút "✅ Đã nhận tiền, làm đơn". Sau khi thêm tính năng nút bấm, mở lại link `/api/telegram?setup=<ADMIN_TOKEN>` một lần để Telegram gửi cả sự kiện bấm nút.
+
+Lệnh Telegram (vẫn dùng được khi gõ tay):
 
 | Lệnh | Ai dùng | Việc |
 |---|---|---|

@@ -40,10 +40,10 @@ export async function GET(request: Request) {
   if (!config.telegram.token) return json({ error: "Thiếu TELEGRAM_BOT_TOKEN" }, 503);
   const b = await getBot();
   const hook = `https://${request.headers.get("x-forwarded-host") ?? url.host}/api/telegram`;
-  await b.api.setWebhook(hook, { secret_token: await secret(), allowed_updates: ["message"], drop_pending_updates: true });
+  await b.api.setWebhook(hook, { secret_token: await secret(), allowed_updates: ["message", "callback_query"], drop_pending_updates: true });
   await b.api.setMyCommands([
+    { command: "start", description: "Bắt đầu" },
     { command: "danhmuc", description: "Xem Mony làm được gì" },
-    { command: "mua", description: "Đặt đơn: /mua <mã> <yêu cầu>" },
     { command: "canhbao", description: "Dấu hiệu việc nhẹ lương cao lừa đảo" },
   ]);
   return json({ ok: true, webhook: hook, bot: b.botInfo.username });

@@ -52,6 +52,7 @@ const SCHEMA = [
      chat_id BIGINT PRIMARY KEY,
      history JSONB NOT NULL DEFAULT '[]',
      hits JSONB NOT NULL DEFAULT '[]')`,
+  `ALTER TABLE chat_state ADD COLUMN IF NOT EXISTS pending_sku TEXT`,
   `CREATE TABLE IF NOT EXISTS llm_usage (
      day DATE NOT NULL,
      model TEXT NOT NULL,
