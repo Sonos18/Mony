@@ -251,7 +251,7 @@ td.amt.cost { color: var(--stamp); }
       </div>
       <div class="stamp" id="deadline-stamp">Hạn chót: 28/10/2027</div>
     </div>
-    <figure class="stage" id="stage" aria-label="Mony, tóc xoăn dài, áo hoodie vá mở khóa lộ hình xăm chim phượng trước ngực, băng ở bụng, ngồi trên ghế nhựa trước chiếc laptop cũ trong căn phòng trọ dột nát, hai tay vò đầu. Bấm vào để Mony quay ra nói chuyện.">
+    <figure class="stage" id="stage" aria-label="Mony, tóc xoăn dài, áo áo khoác thổ cẩm không cổ mở ngực lộ hình xăm chim phượng, băng ở bụng, ngồi trên ghế nhựa trước chiếc laptop cũ trong căn phòng trọ dột nát, hai tay vò đầu. Bấm vào để Mony quay ra nói chuyện.">
       <canvas id="mony-canvas" tabindex="0" aria-hidden="true"></canvas>
       <svg class="mony-fallback" id="mony-fallback" viewBox="0 0 240 240" role="img" aria-label="Mony ngồi trước máy tính cũ, hai tay vò đầu" hidden>
         <rect width="240" height="240" fill="#b9b08f"/><rect y="190" width="240" height="50" fill="#7a5a3c"/>
@@ -860,10 +860,28 @@ setInterval(load, 60000);
   const box = (w, h, d, mat, x, y, z) => mesh(new THREE.BoxGeometry(w, h, d), mat, x, y, z);
   const canvasTex = (w, h) => { const c = document.createElement("canvas"); c.width = w; c.height = h; return { c, ctx: c.getContext("2d"), tex: new THREE.CanvasTexture(c) }; };
 
+  // Vải thổ cẩm cho áo khoác: các dải hoa văn hình thoi đỏ, xanh lá, vàng đất trên nền nâu đen
+  function tapestry(ctx, w, h) {
+    const bands = ["#7a2b22", "#2f5a3c", "#8a6a2c", "#3a2a3e", "#6b3a1f"];
+    for (let y = 0, i = 0; y < h; y += 32, i++) {
+      ctx.fillStyle = bands[i % bands.length]; ctx.fillRect(0, y, w, 32);
+      for (let x = (i % 2) * 16; x < w + 32; x += 32) {
+        ctx.fillStyle = bands[(i + 2) % bands.length];
+        ctx.beginPath(); ctx.moveTo(x, y + 2); ctx.lineTo(x + 14, y + 16); ctx.lineTo(x, y + 30); ctx.lineTo(x - 14, y + 16); ctx.fill();
+        ctx.fillStyle = "#d9b45a";
+        ctx.beginPath(); ctx.moveTo(x, y + 9); ctx.lineTo(x + 6, y + 16); ctx.lineTo(x, y + 23); ctx.lineTo(x - 6, y + 16); ctx.fill();
+        ctx.fillStyle = "#1c1412"; ctx.fillRect(x - 1.5, y + 14.5, 3, 3);
+      }
+      ctx.fillStyle = "#d9b45a"; ctx.fillRect(0, y, w, 2);
+    }
+  }
+  const jacketTex = canvasTex(128, 128);
+  tapestry(jacketTex.ctx, 128, 128);
+  jacketTex.tex.wrapS = jacketTex.tex.wrapT = THREE.RepeatWrapping; jacketTex.tex.repeat.set(3, 2);
   const M = {
     wall: toon(0xb9b08f), wallStain: toon(0x9c9272), wallDark: toon(0x6f6851), floorA: toon(0x7a5a3c), floorB: toon(0x6b4d33),
     wood: toon(0x8a6642), woodDark: toon(0x5e4329), laptop: toon(0x8f96a3), laptopDark: toon(0x4a4f5a), black: toon(0x1b1d22),
-    stool: toon(0xd8342b), skin: toon(0xf0c29c), hair: toon(0x23242c), hoodie: toon(0x55709a), pants: toon(0x3a3f52), patch: toon(0x9a7a52), patch2: toon(0x7d8f5a), stitch: toon(0xefe6cf), tee: toon(0xe9e4d6), cord: toon(0xd9d2bf),
+    stool: toon(0xd8342b), skin: toon(0xd9a77f), hair: toon(0x1e1a18), hoodie: toon(0xffffff, { map: jacketTex.tex }), jacketPlain: toon(0x5a2f22), pants: toon(0x3a3f52), patch: toon(0x9a7a52), patch2: toon(0x7d8f5a), stitch: toon(0xefe6cf), tee: toon(0xe9e4d6), cord: toon(0xd9d2bf),
     sandal: toon(0x4a4642), sandalNew: toon(0x2f7fd0), sandalStrap: toon(0x2a2724), sandalStrapNew: toon(0x1d5aa0), paper: toon(0xf3eedf), stamp: toon(0xc0392b), cup: toon(0xf5f1e8), cupBand: toon(0xe0412f),
     metal: new THREE.MeshPhongMaterial({ color: 0x9aa3ad, shininess: 60, side: THREE.DoubleSide }),
     water: new THREE.MeshPhongMaterial({ color: 0x7fb3d5, transparent: true, opacity: 0.8, shininess: 100 }),
@@ -1192,12 +1210,11 @@ setInterval(load, 60000);
   mony.add(torso);
   torso.add(mesh(new THREE.CylinderGeometry(0.25, 0.28, 0.6, 20), M.hoodie, 0, 0.3, 0));
   torso.add(mesh(new THREE.SphereGeometry(0.25, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), M.hoodie, 0, 0.6, 0));
-  const hood = mesh(new THREE.TorusGeometry(0.17, 0.06, 8, 20, Math.PI), M.hoodie, 0, 0.66, -0.12);
-  hood.rotation.x = -0.9;
-  torso.add(hood);
-  // Áo hoodie cũ mở khóa hình chữ V, lộ hình xăm lớn trước ngực: chim phượng xòe cánh trên ngọn lửa
+  // Áo khoác thổ cẩm không cổ: viền cổ tròn sát gáy
+  torso.add(mesh(new THREE.TorusGeometry(0.19, 0.018, 6, 24, Math.PI * 1.25), M.jacketPlain, 0, 0.7, -0.02).rotateX(Math.PI / 2).rotateZ(-Math.PI * 0.125 + Math.PI));
+  // Áo khoác cũ mở khóa hình chữ V, lộ hình xăm lớn trước ngực: chim phượng xòe cánh trên ngọn lửa
   const chest = canvasTex(256, 256), cx = chest.ctx;
-  cx.fillStyle = "#f0c29c"; cx.fillRect(0, 0, 256, 256);
+  cx.fillStyle = "#d9a77f"; cx.fillRect(0, 0, 256, 256);
   cx.strokeStyle = "#2b3a4a"; cx.fillStyle = "#2b3a4a"; cx.lineCap = "round"; cx.lineJoin = "round";
   for (const sgn of [-1, 1]) {
     for (let k = 0; k < 6; k++) {
@@ -1215,20 +1232,17 @@ setInterval(load, 60000);
   for (const [x, h] of [[104, 30], [118, 44], [128, 52], [138, 44], [152, 30]]) { cx.beginPath(); cx.moveTo(x - 9, 256); cx.quadraticCurveTo(x - 4, 256 - h, x, 210 - h * 0.3); cx.quadraticCurveTo(x + 4, 256 - h, x + 9, 256); cx.fill(); }
   cx.globalAlpha = 1;
   // Phần áo khép lại ở dưới thành hình chữ V, có viền khóa kéo
-  cx.fillStyle = "#55709a";
-  cx.beginPath(); cx.moveTo(0, 0); cx.lineTo(6, 0); cx.lineTo(108, 256); cx.lineTo(0, 256); cx.fill();
-  cx.beginPath(); cx.moveTo(256, 0); cx.lineTo(250, 0); cx.lineTo(148, 256); cx.lineTo(256, 256); cx.fill();
-  cx.strokeStyle = "#8f96a3"; cx.lineWidth = 4;
+  for (const [x0, x1, x2] of [[0, 6, 108], [256, 250, 148]]) {
+    cx.save(); cx.beginPath(); cx.moveTo(x0, 0); cx.lineTo(x1, 0); cx.lineTo(x2, 256); cx.lineTo(x0, 256); cx.clip();
+    cx.scale(2, 2); tapestry(cx, 128, 128); cx.restore();
+  }
+  cx.strokeStyle = "#1c1412"; cx.lineWidth = 5;
   cx.beginPath(); cx.moveTo(6, 0); cx.lineTo(108, 256); cx.moveTo(250, 0); cx.lineTo(148, 256); cx.stroke();
   chest.tex.needsUpdate = true;
   const chestPanel = mesh(new THREE.CylinderGeometry(0.254, 0.272, 0.36, 22, 1, true, -0.8, 1.6), toon(0xffffff, { map: chest.tex }), 0, 0.42, 0);
   torso.add(chestPanel);
   torso.add(mesh(new THREE.SphereGeometry(0.256, 18, 8, Math.PI / 2 - 0.6, 1.2, Math.PI / 3.2, Math.PI / 2 - Math.PI / 3.2), M.skin, 0, 0.6, 0));
-  for (const sx of [-1, 1]) {
-    const a = sx * 0.78;
-    const c = mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.2, 6), M.cord, Math.sin(a) * 0.262, 0.52, Math.cos(a) * 0.262); c.rotation.x = -0.12; torso.add(c);
-    torso.add(mesh(new THREE.SphereGeometry(0.013, 6, 6), M.cord, Math.sin(a) * 0.27, 0.42, Math.cos(a) * 0.27));
-  }
+  const zipPull = box(0.018, 0.04, 0.008, M.metal, 0.012, 0.25, 0.272); zipPull.rotation.y = 0.05; torso.add(zipPull);
   function patchOn(mat, w, h, y, ang, tilt) {
     const g = new THREE.Group();
     g.add(box(w, h, 0.012, mat));
@@ -1277,18 +1291,24 @@ setInterval(load, 60000);
     c.scale.set(size, size * 1.15, size);
     head.add(c); return c;
   }
-  for (let row = 0; row < 7; row++) {
-    const y = 0.13 - row * 0.075, r = 0.2 + row * 0.012, n = 9 + (row % 2);
+  for (let row = 0; row < 10; row++) {
+    const y = 0.13 - row * 0.07, r = 0.2 + Math.min(row, 6) * 0.014, n = 9 + (row % 2);
     for (let i = 0; i < n; i++) {
-      const a = Math.PI / 2 + 0.25 + (i / (n - 1)) * (Math.PI - 0.5) + (row % 2) * 0.12;
-      tufts.push(curl(a, y + Math.sin(i * 2.3 + row) * 0.012, r, 0.05 + ((i * 7 + row * 3) % 4) * 0.006));
+      const a = Math.PI / 2 + 0.2 + (i / (n - 1)) * (Math.PI - 0.4) + (row % 2) * 0.12;
+      tufts.push(curl(a, y + Math.sin(i * 2.3 + row) * 0.014, r, 0.052 + ((i * 7 + row * 3) % 4) * 0.007));
     }
   }
-  for (const side of [-1, 1]) for (let row = 0; row < 5; row++) {
-    tufts.push(curl(side * (1.32 + row * 0.04), 0.1 - row * 0.08, 0.215 + row * 0.01, 0.05 + (row % 2) * 0.008));
+  // Hai bên mặt: lọn tóc buông xuống quá cằm
+  for (const side of [-1, 1]) for (let row = 0; row < 7; row++) {
+    tufts.push(curl(side * (1.18 + row * 0.03), 0.12 - row * 0.065, 0.215 + row * 0.008, 0.05 + (row % 2) * 0.01));
   }
-  for (let i = 0; i < 9; i++) tufts.push(curl(-1.1 + i * 0.275, 0.19 + Math.sin(i * 1.7) * 0.012, 0.165, 0.055));
-  for (const a of [-0.55, 0.15, 0.6]) tufts.push(curl(a, 0.14, 0.2, 0.04));
+  // Rẽ ngôi giữa: tóc mái hất sang hai bên, chừa trán
+  for (const side of [-1, 1]) for (let i = 0; i < 5; i++) {
+    tufts.push(curl(side * (0.28 + i * 0.2), 0.2 - i * 0.025, 0.17 + i * 0.012, 0.05));
+  }
+  // Ria mép và râu cằm
+  for (const side of [-1, 1]) { const m = box(0.06, 0.016, 0.02, M.hair, side * 0.032, -0.07, 0.205); m.rotation.z = side * -0.25; head.add(m); }
+  const goatee = mesh(new THREE.SphereGeometry(0.04, 10, 8), M.hair, 0, -0.17, 0.165); goatee.scale.set(1, 1.3, 0.6); head.add(goatee);
   // Sẹo cũ trên má trái, có vết khâu
   const scar = new THREE.Group();
   scar.add(box(0.075, 0.009, 0.006, toon(0xd98a7a)));
@@ -1298,12 +1318,12 @@ setInterval(load, 60000);
   const eyes = [];
   for (const side of [-1, 1]) {
     const e = mesh(new THREE.SphereGeometry(0.03, 10, 8), M.black, side * 0.08, 0.0, 0.2); e.scale.z = 0.5; eyes.push(e); head.add(e);
-    const brow = box(0.08, 0.015, 0.01, M.hair, side * 0.08, 0.06, 0.21); brow.rotation.z = side * -0.35; head.add(brow);
+    const brow = box(0.085, 0.022, 0.012, M.hair, side * 0.08, 0.062, 0.21); brow.rotation.z = side * -0.35; head.add(brow);
     head.add(mesh(new THREE.SphereGeometry(0.045, 10, 8), M.skin, side * 0.22, 0, 0));
   }
   const mouth = mesh(new THREE.TorusGeometry(0.035, 0.01, 6, 12, Math.PI), M.black, 0, -0.1, 0.205);
   head.add(mouth);
-  head.add(mesh(new THREE.SphereGeometry(0.028, 10, 8), toon(0xe8b48c), 0, -0.04, 0.22));
+  head.add(mesh(new THREE.SphereGeometry(0.028, 10, 8), toon(0xc9946c), 0, -0.035, 0.22));
   const arms = [-1, 1].map((side) => {
     const upper = limb(0.075, M.hoodie), fore = limb(0.065, M.hoodie);
     const hand = mesh(new THREE.SphereGeometry(0.065, 10, 8), M.skin);
