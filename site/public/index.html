@@ -83,11 +83,9 @@ button { font: inherit; cursor: pointer; }
 @media (min-width: 860px) { .hero { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; } }
 .hero-head { grid-column: 1 / -1; display: grid; gap: 14px; min-width: 0; }
 .hero-text { display: grid; gap: 18px; min-width: 0; }
-.stage-col { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; order: -1; min-width: 0; align-content: start; }
-@media (min-width: 860px) { .stage-col { order: 0; } }
-.stage { position: relative; margin: 0; height: clamp(300px, 70vw, 380px); border-radius: 12px; overflow: hidden;
+.stage { position: relative; margin: 0; order: -1; height: clamp(300px, 70vw, 380px); border-radius: 12px; overflow: hidden;
   background: #3a3226; }
-@media (min-width: 860px) { .stage { height: 460px; } }
+@media (min-width: 860px) { .stage { order: 0; height: 460px; } }
 .stage canvas { width: 100%; height: 100%; display: block; cursor: pointer; touch-action: pan-y; }
 .mony-fallback { width: 100%; height: 100%; }
 .bubble { position: absolute; top: 12px; left: 12px; right: 12px; max-width: 30ch; margin-inline: auto;
@@ -126,15 +124,6 @@ button { font: inherit; cursor: pointer; }
 .prologue.half .lid.top { transform: translateY(-55%); }
 .prologue.half .lid.bottom { transform: translateY(55%); }
 .skip { position: absolute; top: 10px; right: 10px; border: 1px solid rgba(255,255,255,.4); background: rgba(0,0,0,.4); color: #fff; font-size: .78rem; padding: 4px 12px; border-radius: 999px; z-index: 3; }
-.talk { display: flex; gap: 6px; align-items: center; }
-.talk input { flex: 1; min-width: 0; font: 400 1rem/1.3 var(--f-body); color: var(--ink); background: var(--sheet);
-  border: 1.5px solid var(--ink); border-radius: 999px; padding: 9px 14px; }
-.talk input:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
-.talk .mic { width: 42px; height: 42px; padding: 0; justify-content: center; flex: none; }
-.talk .mic[aria-pressed="true"] { background: var(--stamp); border-color: var(--stamp); color: #fff; animation: pulse 1.2s infinite; }
-.talk .btn:disabled { opacity: .5; cursor: default; }
-@keyframes pulse { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--stamp) 25%, transparent); } }
-.talk-note { margin: 0; font-size: .78rem; color: var(--ink-soft); }
 .stage-hint { position: absolute; bottom: 44px; right: 12px; font-size: .74rem; color: #efe6cf; text-shadow: 0 1px 2px #000; }
 .hero .kicker { font: 600 .78rem/1 var(--f-body); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); }
 .hero h1 { font: 400 clamp(2rem, 4.4vw, 3.15rem)/1.15 var(--f-hand); text-wrap: pretty; }
@@ -262,7 +251,6 @@ td.amt.cost { color: var(--stamp); }
       </div>
       <div class="stamp" id="deadline-stamp">Hạn chót: 28/10/2027</div>
     </div>
-    <div class="stage-col">
     <figure class="stage" id="stage" aria-label="Mony, tóc xoăn dài, áo áo khoác thổ cẩm không cổ mở ngực lộ hình xăm chim phượng, băng ở bụng, ngồi trên ghế nhựa trước chiếc laptop cũ trong căn phòng trọ dột nát, hai tay vò đầu. Bấm vào để Mony quay ra nói chuyện.">
       <canvas id="mony-canvas" tabindex="0" aria-hidden="true"></canvas>
       <svg class="mony-fallback" id="mony-fallback" viewBox="0 0 240 240" role="img" aria-label="Mony ngồi trước máy tính cũ, hai tay vò đầu" hidden>
@@ -279,7 +267,7 @@ td.amt.cost { color: var(--stamp); }
         <circle cx="120" cy="94" r="6" fill="#f0c29c"/><circle cx="144" cy="94" r="6" fill="#f0c29c"/>
       </svg>
       <figcaption class="bubble" id="bubble" aria-live="polite">Xin chào, tôi là Mony.</figcaption>
-      <span class="stage-hint">Nói gì đó với Mony ở ô bên dưới</span>
+      <span class="stage-hint">Bấm vào Mony để nói chuyện</span>
       <div class="stage-controls">
         <button class="ctl" id="voice-toggle" type="button" aria-pressed="false">🔇 Bật tiếng</button>
         <button class="ctl" id="replay" type="button">↺ Xem lại đoạn mở đầu</button>
@@ -447,13 +435,6 @@ td.amt.cost { color: var(--stamp); }
         <button class="skip" id="skip" type="button">Bỏ qua</button>
       </div>
     </figure>
-    <form class="talk" id="talk" autocomplete="off">
-      <button class="btn mic" id="talk-mic" type="button" aria-pressed="false" aria-label="Bấm rồi nói với Mony" title="Bấm rồi nói" hidden>🎤</button>
-      <input id="talk-input" name="q" maxlength="300" enterkeyhint="send" placeholder="Nói gì đó với Mony…" aria-label="Nói với Mony">
-      <button class="btn primary" id="talk-send" type="submit">Nói</button>
-    </form>
-    <p class="talk-note" id="talk-note">Mony là nhân vật hư cấu do AI đóng vai. Lời bạn được gửi tới OpenAI để trả lời và có thể được dùng để huấn luyện mô hình, nên đừng gửi thông tin cá nhân.</p>
-    </div>
   </section>
 
   <section class="sheet plain meter" aria-labelledby="meter-title">
@@ -853,9 +834,7 @@ setInterval(load, 60000);
     setTimeout(() => { bubble.textContent = text; bubble.style.opacity = "1"; }, 200);
     MONY.voice.speak(text);
   }
-  function nextLine() { if (performance.now() < (MONY.quietUntil || 0)) return; const l = lines(); say(l[lineIdx++ % l.length]); }
-  // Câu trả lời khi khách nói chuyện: tạm ngừng lời độc thoại một lúc để khách kịp đọc
-  MONY.say = (text) => { MONY.quietUntil = performance.now() + 25000; if (MONY.onTalk) MONY.onTalk(); say(text); };
+  function nextLine() { const l = lines(); say(l[lineIdx++ % l.length]); }
 
   function useFallback() {
     canvas.hidden = true;
@@ -1486,7 +1465,6 @@ setInterval(load, 60000);
     nextLine();
   }
   canvas.addEventListener("click", poke);
-  MONY.onTalk = () => { const now = performance.now(); turnUntil = now + 6000; override = "wave"; overrideUntil = now + 1500; };
   canvas.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); poke(); } });
 
   // Bầu trời theo giờ Việt Nam
@@ -1719,80 +1697,6 @@ setInterval(load, 60000);
   let seen = false;
   try { seen = localStorage.getItem("mony.prologueSeen") === "1"; } catch {}
   if (!seen && !reduce) play();
-})();
-</script>
-<script>
-// Nói chuyện trực tiếp với Mony: gõ hoặc bấm micro rồi nói. Mony trả lời trong bong bóng thoại và đọc thành tiếng.
-(function () {
-  const form = $("talk"), input = $("talk-input"), send = $("talk-send"), mic = $("talk-mic"), note = $("talk-note");
-  const bubble = $("bubble");
-  let history = [];
-  try { history = JSON.parse(sessionStorage.getItem("mony.talk") || "[]"); } catch {}
-  const save = () => { try { sessionStorage.setItem("mony.talk", JSON.stringify(history.slice(-10))); } catch {} };
-  let busy = false;
-
-  async function ask(text) {
-    text = text.trim();
-    if (!text || busy) return;
-    busy = true; send.disabled = true; input.value = "";
-    if (MONY.prologueActive) $("skip").click();
-    history.push({ role: "user", content: text });
-    MONY.quietUntil = performance.now() + 30000;
-    bubble.textContent = "…";
-    let reply;
-    try {
-      const r = await fetch(CONFIG.apiBase + "/talk", {
-        method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ messages: history.slice(-10) }),
-      });
-      const data = await r.json();
-      reply = data.reply || "Mony chưa nghe rõ. Bạn nói lại nhé?";
-      if (r.ok) history.push({ role: "assistant", content: reply }); else history.pop();
-      note.textContent = typeof data.left === "number" && data.left <= 5
-        ? "Hôm nay bạn còn " + data.left + " lượt nói chuyện với Mony."
-        : "Mony là nhân vật hư cấu do AI đóng vai. Lời bạn được gửi tới OpenAI để trả lời và có thể được dùng để huấn luyện mô hình, nên đừng gửi thông tin cá nhân.";
-    } catch (e) {
-      history.pop();
-      reply = "Mạng phòng trọ lại chập chờn. Bạn nói lại giúp Mony được không?";
-    }
-    save();
-    MONY.say ? MONY.say(reply) : (bubble.textContent = reply);
-    busy = false; send.disabled = false;
-  }
-
-  form.addEventListener("submit", (e) => { e.preventDefault(); ask(input.value); });
-
-  // Micro: dùng nhận dạng giọng nói của trình duyệt (Chrome, Edge, Safari)
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) return;
-  mic.hidden = false;
-  let rec = null;
-  mic.addEventListener("click", () => {
-    if (rec) { rec.stop(); return; }
-    // Khách đã chủ động nói thì bật luôn giọng của Mony
-    if (!MONY.voice.enabled && MONY.voice.supported()) {
-      MONY.voice.setEnabled(true);
-      try { localStorage.setItem("mony.voice", "1"); } catch {}
-      const vt = $("voice-toggle"); vt.setAttribute("aria-pressed", "true"); vt.textContent = "🔊 Tắt tiếng";
-    }
-    if (window.speechSynthesis) speechSynthesis.cancel();
-    rec = new SR();
-    rec.lang = "vi-VN"; rec.interimResults = true; rec.maxAlternatives = 1;
-    let finalText = "";
-    rec.onresult = (e) => {
-      let interim = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) finalText += e.results[i][0].transcript; else interim += e.results[i][0].transcript;
-      }
-      input.value = finalText + interim;
-    };
-    rec.onerror = (e) => { if (e.error === "not-allowed") note.textContent = "Trình duyệt chưa cho dùng micro. Bạn có thể gõ thay."; };
-    rec.onend = () => { mic.setAttribute("aria-pressed", "false"); rec = null; if (finalText.trim()) ask(finalText); };
-    mic.setAttribute("aria-pressed", "true");
-    input.value = ""; input.placeholder = "Mony đang nghe…";
-    rec.start();
-    setTimeout(() => { input.placeholder = "Nói gì đó với Mony…"; }, 8000);
-  });
 })();
 </script>
 <script>

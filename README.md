@@ -61,18 +61,7 @@ Không cần gõ lệnh. Gói miễn phí của Vercel và Neon là đủ.
 
 Từ đó mỗi lần đẩy code lên `main`, Vercel tự deploy lại. Muốn đổi tổng nợ hay ngày bắt đầu, thêm biến `DEBT_TOTAL`, `START_DATE`, `DEADLINE` (mặc định 200000000, 2026-10-28, 2027-10-28).
 
-### Cho khách nói chuyện với Mony
-
-Khách gõ hoặc bấm micro ngay dưới phòng 3D, Mony trả lời trong bong bóng thoại và đọc thành tiếng. Câu trả lời do model mini của OpenAI (mặc định `gpt-5.4-mini`) viết theo vai trong `site/lib/persona.ts`, kèm số liệu thật từ sổ cái.
-
-1. Ở [platform.openai.com](https://platform.openai.com), bật chia sẻ dữ liệu với OpenAI để được hạn mức token miễn phí mỗi ngày (nhóm model mini: 2,5 triệu token). Tạo API key.
-2. Thêm biến `OPENAI_API_KEY` trên Vercel rồi Redeploy. Chưa có key thì ô nói chuyện vẫn hiện, Mony chỉ trả lời "đang bận".
-
-Vì bật chia sẻ dữ liệu, lời khách nói được gửi tới OpenAI và có thể dùng để huấn luyện; dòng nhắc dưới ô nói chuyện đã ghi rõ điều này.
-
-Giữ ví: mỗi khách tối đa `TALK_DAILY_PER_VISITOR` lượt mỗi ngày (mặc định 20), cả trang dừng khi dùng hết `TALK_DAILY_TOKENS` token trong ngày (mặc định 2.000.000, dưới hạn mức miễn phí). Nếu dùng model ngoài hạn mức, điền giá vào `OPENAI_PRICE_IN`, `OPENAI_PRICE_OUT` (USD mỗi triệu token): tiền AI mỗi ngày sẽ cộng vào một dòng chi `ai-talk` trong sổ cái và dừng ở `TALK_DAILY_BUDGET_VND` (mặc định 50000). Đổi model bằng `OPENAI_MODEL`.
-
-Bản Vercel nằm ở `site/api/` (5 API) và `site/lib/db.ts` (kết nối Postgres, tạo bảng). Thử trên máy: cần Postgres, đặt `DATABASE_URL`, `ADMIN_TOKEN`, `FOLLOW_SALT` rồi chạy `npx vercel dev` trong `site/`.
+Bản Vercel nằm ở `site/api/` (4 API) và `site/lib/db.ts` (kết nối Postgres, tạo bảng). Thử trên máy: cần Postgres, đặt `DATABASE_URL`, `ADMIN_TOKEN`, `FOLLOW_SALT` rồi chạy `npx vercel dev` trong `site/`.
 
 ## Hoặc chạy trên Cloudflare Pages
 
@@ -102,7 +91,6 @@ Chạy thử trên máy: tạo `site/.dev.vars` với `ADMIN_TOKEN=...` và `FOL
 | POST | `/api/follow` | mỗi IP tính một lần, chỉ lưu mã băm |
 | GET/POST | `/api/diary` | POST cần `Authorization: Bearer ADMIN_TOKEN` |
 | GET/POST | `/api/ledger` | POST cần token; `kind` là `income`, `cost` hoặc `donation`, `amount` là số nguyên VND |
-| POST | `/api/talk` | chỉ bản Vercel; `messages` là các lượt `{role, content}`, lượt cuối của khách |
 
 ## Chạy agent
 
