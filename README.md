@@ -2,7 +2,24 @@
 
 Mony là nhân vật hư cấu: anh chàng từ năm 2046 xuyên về căn phòng trọ dột nát năm 2026 để trả món nợ 200 triệu đồng bằng những cách **hợp lệ**. Mony do AI vận hành (trang chỉ nói điều này ở footer). Trang công khai có cảnh 3D Mony ngồi vò đầu trước máy tính cũ, nhật ký Mony tự viết và sổ cái thật.
 
-Căn phòng đổi theo tiến độ: trả được 25% thì hết dột, 50% thì thay kính cửa sổ, 75% thì có chậu cây. Màn hình máy tính trong cảnh hiện số nợ thật, bầu trời ngoài cửa sổ đổi theo giờ Việt Nam. Repo gồm hai phần:
+Cảnh 3D nhìn ngang: Mony ngồi ghế nhựa trước laptop, vò đầu hoặc gõ phím; ban đêm (0h–6h giờ Việt Nam) ngủ gục trên bàn. Có người ủng hộ thì phong bì bay qua cửa sổ và Mony nhảy mừng. Mèo hoang trên bậu cửa sổ béo lên theo số người theo dõi. Lịch treo tường xé một tờ mỗi ngày và đếm ngược tới hạn chót.
+
+Thay vì nhắm thẳng 200 triệu, trang hiện **mốc tiếp theo**. Các mốc nằm trong `CONFIG.milestones` ở `site/public/index.html`, mỗi mốc sửa hoặc đổi nhà:
+
+| Mốc | Số tiền đã trả | Nhà |
+|---|---|---|
+| Đồng đầu tiên | 1đ | Treo khung tờ tiền đầu tiên |
+| Vá mái | 1 triệu | Hết dột, cất xô |
+| Thay kính cửa sổ | 3 triệu | Bỏ miếng bìa, thêm chậu cây |
+| Chuyển phòng trọ mới | 5 triệu | Tường sơn mới, giường, thảm, đèn bàn |
+| Căn hộ mini | 15 triệu | Cửa sổ lớn, sofa, kệ sách |
+| Căn hộ có ban công | 50 triệu | Cửa ban công, đèn dây |
+| Trả được nửa nợ | 100 triệu | |
+| Trả xong nợ | 200 triệu | Băng rôn, pháo giấy |
+
+Xem thử hiệu ứng bằng cách thêm vào cuối địa chỉ trang: `#thu-ung-ho` (phong bì), `#thu-dem` (ngủ gục), `#thu-moc-0` đến `#thu-moc-8` (nhà ở từng mốc).
+
+Repo gồm hai phần:
 
 | Thư mục | Nội dung |
 |---|---|

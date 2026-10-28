@@ -111,6 +111,15 @@ button { font: inherit; cursor: pointer; }
 .bar { height: 22px; border-radius: 999px; background: var(--stamp-soft); border: 1.5px solid var(--stamp); overflow: hidden; position: relative; }
 .bar > span { display: block; height: 100%; width: 0; background: var(--blue); transition: width .8s ease; min-width: 0; }
 .bar-scale { display: flex; justify-content: space-between; font: 500 .74rem var(--f-num); color: var(--ink-soft); }
+.next-goal { display: grid; gap: 4px; }
+.next-goal .kicker { font: 600 .74rem/1 var(--f-body); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); }
+.goal-note { font-size: .9rem; color: var(--ink-soft); }
+.milestones { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.milestones li { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--rule); color: var(--ink-soft); background: var(--sheet); }
+.milestones li b { font-family: var(--f-num); font-weight: 700; }
+.milestones li.done { background: var(--green-soft); border-color: var(--green); color: var(--green); }
+.milestones li.next { border: 1.5px solid var(--blue); color: var(--blue); font-weight: 600; }
+.milestones li.done::before { content: "✓"; font-weight: 700; }
 .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
 .tile { border: 1px solid var(--rule); border-radius: 8px; padding: 12px 14px; display: grid; gap: 4px; background: var(--sheet); }
 .tile .k { font-size: .78rem; color: var(--ink-soft); font-weight: 500; }
@@ -191,7 +200,7 @@ td.amt.cost { color: var(--stamp); }
       </div>
       <div class="stamp" id="deadline-stamp">Hạn chót: 28/10/2027</div>
     </div>
-    <figure class="stage" id="stage" aria-label="Mony ngồi trên ghế nhựa trước chiếc máy tính cũ trong căn phòng trọ dột nát, hai tay vò đầu. Bấm vào để Mony quay lại nói chuyện.">
+    <figure class="stage" id="stage" aria-label="Mony ngồi trên ghế nhựa trước chiếc laptop cũ trong căn phòng trọ dột nát, hai tay vò đầu. Bấm vào để Mony quay ra nói chuyện.">
       <canvas id="mony-canvas" tabindex="0" aria-hidden="true"></canvas>
       <svg class="mony-fallback" id="mony-fallback" viewBox="0 0 240 240" role="img" aria-label="Mony ngồi trước máy tính cũ, hai tay vò đầu" hidden>
         <rect width="240" height="240" fill="#b9b08f"/><rect y="190" width="240" height="50" fill="#7a5a3c"/>
@@ -213,17 +222,18 @@ td.amt.cost { color: var(--stamp); }
 
   <section class="sheet plain meter" aria-labelledby="meter-title">
     <div class="meter-head">
-      <h2 id="meter-title">Còn nợ</h2>
-      <div class="remaining num" id="remaining">200.000.000đ<small>còn <span id="days-left">365</span> ngày</small></div>
+      <div class="next-goal"><span class="kicker">Mốc tiếp theo</span><h2 id="meter-title">Đồng đầu tiên</h2><span class="goal-note" id="goal-note">Kiếm được khoản tiền đầu tiên</span></div>
+      <div class="remaining num" id="remaining">0đ<small><span id="remaining-label">đã kiếm được</span> · còn <span id="days-left">365</span> ngày tới hạn chót</small></div>
     </div>
-    <div class="bar" role="progressbar" aria-label="Tiến độ trả nợ" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bar"><span id="bar-fill"></span></div>
-    <div class="bar-scale"><span>0đ</span><span>50tr</span><span>100tr</span><span>150tr</span><span>200tr</span></div>
+    <div class="bar" role="progressbar" aria-label="Tiến độ tới mốc tiếp theo" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bar"><span id="bar-fill"></span></div>
+    <div class="bar-scale"><span id="scale-from">0đ</span><span id="scale-to">1đ</span></div>
+    <ol class="milestones" id="milestones" aria-label="Các mốc trả nợ"></ol>
     <div class="tiles">
       <div class="tile"><span class="k">Đã trả được</span><span class="v plus" id="t-repaid">0đ</span></div>
       <div class="tile"><span class="k">Doanh thu</span><span class="v plus" id="t-income">0đ</span></div>
       <div class="tile"><span class="k">Được ủng hộ</span><span class="v plus" id="t-donated">0đ</span></div>
       <div class="tile"><span class="k">Chi phí vận hành</span><span class="v minus" id="t-cost">0đ</span></div>
-      <div class="tile"><span class="k">Cần mỗi ngày</span><span class="v" id="t-perday">0đ</span></div>
+      <div class="tile"><span class="k">Tổng nợ còn</span><span class="v minus" id="t-remaining">200.000.000đ</span></div>
     </div>
     <p class="formula">Đã trả = doanh thu + ủng hộ − chi phí. Số liệu lấy thẳng từ sổ cái bên dưới. <span class="preview-flag" id="preview-flag" hidden>Đang xem bản dựng trước, chưa nối dữ liệu thật.</span></p>
   </section>
@@ -279,7 +289,28 @@ const CONFIG = {
     accountName: "",
     memo: "UNG HO MONY",
   },
+  // Các mốc nhỏ tính theo số tiền đã trả. Mỗi mốc sửa hoặc đổi nhà cho Mony (house: 0 phòng trọ dột, 1 phòng trọ mới, 2 căn hộ mini, 3 căn hộ có ban công, 4 trả xong nợ).
+  milestones: [
+    { amount: 1, name: "Đồng đầu tiên", note: "Kiếm được khoản tiền đầu tiên", house: 0 },
+    { amount: 1000000, name: "Vá mái", note: "Hết dột, cất cái xô đi", house: 0 },
+    { amount: 3000000, name: "Thay kính cửa sổ", note: "Bỏ miếng bìa, thêm chậu cây", house: 0 },
+    { amount: 5000000, name: "Chuyển phòng trọ mới", note: "Tường sơn mới, có giường đàng hoàng", house: 1 },
+    { amount: 15000000, name: "Căn hộ mini", note: "Cửa sổ lớn, có sofa", house: 2 },
+    { amount: 50000000, name: "Căn hộ có ban công", note: "Có ban công và đèn dây", house: 3 },
+    { amount: 100000000, name: "Trả được nửa nợ", note: "Một nửa chặng đường", house: 3 },
+    { amount: 200000000, name: "Trả xong nợ", note: "Tự do", house: 4 },
+  ],
 };
+
+// Mốc đã đạt, mốc tiếp theo và kiểu nhà hiện tại theo số tiền đã trả
+function milestoneState(repaid) {
+  const ms = CONFIG.milestones;
+  const doneCount = ms.filter((m) => repaid >= m.amount).length;
+  const next = ms[doneCount] || null;
+  const prevAmount = doneCount ? ms[doneCount - 1].amount : 0;
+  const house = doneCount ? ms[doneCount - 1].house : 0;
+  return { doneCount, next, prevAmount, house, leakFixed: doneCount >= 2, windowFixed: doneCount >= 3, firstMoney: doneCount >= 1 };
+}
 
 // Dữ liệu mở đầu khi chưa có API (bản xem trước). Tiền đều là 0 vì chưa có giao dịch nào.
 const FALLBACK = {
@@ -302,7 +333,7 @@ const FALLBACK = {
 };
 
 // Trạng thái chung để nhân vật 3D biết nói gì
-const MONY = { stats: null, onStats: null };
+const MONY = { stats: null, milestone: null, onStats: null };
 
 const $ = (id) => document.getElementById(id);
 const vnd = (n) => new Intl.NumberFormat("vi-VN").format(Math.round(n || 0)) + "đ";
@@ -318,23 +349,40 @@ async function getJSON(path) {
 }
 
 function renderStats(s) {
-  MONY.stats = s; if (MONY.onStats) MONY.onStats(s);
   const total = s.debt_total || CONFIG.debtTotal;
-  const pct = Math.min(100, (s.repaid / total) * 100);
   const today = new Date().toISOString().slice(0, 10);
   const left = Math.max(0, daysBetween(today, s.deadline));
-  $("remaining").firstChild.nodeValue = vnd(s.remaining);
+  const st = milestoneState(s.repaid);
+  const goal = st.next ? st.next.amount : total;
+  const span = Math.max(1, goal - st.prevAmount);
+  const gpct = st.next ? Math.min(100, Math.max(0, ((s.repaid - st.prevAmount) / span) * 100)) : 100;
+  $("meter-title").textContent = st.next ? st.next.name : "Đã trả xong nợ!";
+  $("goal-note").textContent = st.next ? st.next.note : "Mony tự do rồi.";
+  const firstGoal = st.next && st.next.amount <= 1;
+  $("remaining").firstChild.nodeValue = firstGoal ? "0đ" : vnd(st.next ? Math.max(0, goal - s.repaid) : 0);
+  $("remaining-label").textContent = firstGoal ? "đã kiếm được" : "nữa là tới mốc";
   $("days-left").textContent = left;
   $("day-n").textContent = Math.max(1, daysBetween(s.start_date, today) + 1);
-  $("bar-fill").style.width = pct.toFixed(2) + "%";
-  $("bar").setAttribute("aria-valuenow", pct.toFixed(1));
+  $("bar-fill").style.width = gpct.toFixed(2) + "%";
+  $("bar").setAttribute("aria-valuenow", gpct.toFixed(1));
+  $("scale-from").textContent = vnd(st.prevAmount);
+  $("scale-to").textContent = vnd(goal);
+  $("t-remaining").textContent = vnd(s.remaining);
+  const list = $("milestones"); list.replaceChildren();
+  CONFIG.milestones.forEach((m, i) => {
+    const li = document.createElement("li");
+    if (i < st.doneCount) li.className = "done"; else if (i === st.doneCount) li.className = "next";
+    li.append(m.name + " ");
+    const b = document.createElement("b"); b.textContent = m.amount >= 1000000 ? (m.amount / 1000000) + "tr" : m.amount >= 1000 ? (m.amount / 1000) + "k" : vnd(m.amount);
+    li.append(b); list.append(li);
+  });
   $("t-repaid").textContent = vnd(s.repaid);
   $("t-income").textContent = vnd(s.income);
   $("t-donated").textContent = vnd(s.donated);
   $("t-cost").textContent = vnd(s.cost);
-  $("t-perday").textContent = left ? vnd(s.remaining / left) : "—";
   $("followers").textContent = new Intl.NumberFormat("vi-VN").format(s.followers);
   $("deadline-stamp").textContent = "Hạn chót: " + dateVi(s.deadline);
+  MONY.stats = s; MONY.milestone = st; if (MONY.onStats) MONY.onStats(s, st);
 
   const box = $("sources"); box.replaceChildren();
   for (const src of s.sources) {
@@ -447,7 +495,7 @@ load();
 setInterval(load, 60000);
 </script>
 <script>
-// Cảnh 3D: Mony ngồi ghế nhựa trước máy tính cũ trong căn phòng trọ dột nát.
+// Cảnh 3D: Mony ngồi ghế nhựa trước laptop, nhìn ngang. Nhà đổi theo các mốc trả nợ.
 // Mọi thứ dựng bằng hình khối của three.js, không cần file mô hình ngoài.
 (function () {
   const canvas = document.getElementById("mony-canvas");
@@ -455,25 +503,26 @@ setInterval(load, 60000);
   const bubble = document.getElementById("bubble");
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const vnd = (n) => new Intl.NumberFormat("vi-VN").format(Math.round(n || 0)) + "đ";
+  const vnHour = () => (new Date().getUTCHours() + 7) % 24;
+  const isNight = () => { const h = vnHour(); return h >= 0 && h < 6; };
 
   // Lời thoại dựa trên số liệu thật
   function lines() {
-    const s = MONY.stats;
+    const s = MONY.stats, st = MONY.milestone;
+    if (isNight()) return ["Khò... khò...", "Mơ thấy năm 2046... ác mộng thật.", "Zzz... mai làm tiếp..."];
     const base = [
       "Ở năm 2046, ai cũng đọc kỹ hợp đồng trước khi ký.",
       "Mì gói lần thứ ba trong tuần. Không sao, ghi vào sổ.",
-      "Mái lại dột rồi. Phải kiếm thêm khách thôi.",
+      "Con mèo hoang này béo lên theo số người theo dõi đấy.",
       "Tôi chỉ bán dịch vụ thật. Luật tự đặt, không phá.",
-      "Bấm Theo dõi để xem tôi trả nợ từng ngày nhé.",
     ];
-    if (!s) return base;
-    const pct = s.debt_total ? (s.repaid / s.debt_total) * 100 : 0;
-    return [
-      "Còn " + vnd(s.remaining) + ". Tôi chưa bỏ cuộc đâu.",
-      s.repaid > 0 ? "Đã trả được " + pct.toFixed(2) + "% rồi." : "Doanh thu hôm nay: 0đ. Ngày mai sẽ khác.",
-      s.followers > 0 ? s.followers + " người đang theo dõi tôi. Áp lực ghê." : "Chưa ai theo dõi. Bạn làm người đầu tiên nhé?",
-      ...base,
-    ];
+    if (!s || !st) return base;
+    const out = [];
+    if (st.next) out.push(st.next.amount <= 1 ? "Mục tiêu trước mắt: kiếm được đồng đầu tiên." : "Mốc tiếp theo: " + st.next.name + ". Còn " + vnd(Math.max(0, st.next.amount - s.repaid)) + " nữa.");
+    if (st.house === 0 && !st.leakFixed) out.push("Mái lại dột rồi. Cái xô sắp đầy.");
+    out.push(s.followers > 0 ? s.followers + " người đang theo dõi tôi. Áp lực ghê." : "Chưa ai theo dõi. Bạn làm người đầu tiên nhé?");
+    if (s.repaid <= 0) out.push("Doanh thu hôm nay: 0đ. Ngày mai sẽ khác.");
+    return out.concat(base);
   }
   let lineIdx = 0;
   function say(text) {
@@ -498,140 +547,221 @@ setInterval(load, 60000);
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   const V = THREE.Vector3;
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-  const camTarget = new V(0.1, 1.05, -1.5);
+  const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+  const camTarget = new V(-0.55, 1.15, -1.3);
 
   const toon = (c, extra) => new THREE.MeshToonMaterial(Object.assign({ color: c }, extra || {}));
   const mesh = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x || 0, y || 0, z || 0); return m; };
   const box = (w, h, d, mat, x, y, z) => mesh(new THREE.BoxGeometry(w, h, d), mat, x, y, z);
+  const canvasTex = (w, h) => { const c = document.createElement("canvas"); c.width = w; c.height = h; return { c, ctx: c.getContext("2d"), tex: new THREE.CanvasTexture(c) }; };
 
   const M = {
     wall: toon(0xb9b08f), wallStain: toon(0x9c9272), wallDark: toon(0x6f6851), floorA: toon(0x7a5a3c), floorB: toon(0x6b4d33),
-    wood: toon(0x8a6642), woodDark: toon(0x5e4329), crt: toon(0xd8d0b8), crtDark: toon(0x9d967f), black: toon(0x1b1d22),
+    wood: toon(0x8a6642), woodDark: toon(0x5e4329), laptop: toon(0x8f96a3), laptopDark: toon(0x4a4f5a), black: toon(0x1b1d22),
     stool: toon(0xd8342b), skin: toon(0xf0c29c), hair: toon(0x23242c), hoodie: toon(0x3d5a8c), pants: toon(0x2d3140),
     sandal: toon(0x3a3a3a), paper: toon(0xf3eedf), stamp: toon(0xc0392b), cup: toon(0xf5f1e8), cupBand: toon(0xe0412f),
-    metal: new THREE.MeshPhongMaterial({ color: 0x9aa3ad, shininess: 60 }), water: new THREE.MeshPhongMaterial({ color: 0x7fb3d5, transparent: true, opacity: 0.8, shininess: 100 }),
+    metal: new THREE.MeshPhongMaterial({ color: 0x9aa3ad, shininess: 60, side: THREE.DoubleSide }),
+    water: new THREE.MeshPhongMaterial({ color: 0x7fb3d5, transparent: true, opacity: 0.8, shininess: 100 }),
     cardboard: toon(0xb08a55), tape: toon(0xe8dcb0), glass: new THREE.MeshBasicMaterial({ color: 0x9fd3ff }),
     bulb: new THREE.MeshBasicMaterial({ color: 0xfff1b8 }), wire: toon(0x222222), leaf: toon(0x3f8f4f), pot: toon(0xb5653a),
-    note: toon(0xffe066),
+    cat: toon(0xe08a3c), catLight: toon(0xf6d3a8), fabric: toon(0x6c8fbf), fabricLight: toon(0xeef2f8), sofa: toon(0x8e5a8a),
+    rug: toon(0xc96f4a), envelope: toon(0xfffdf5), envelopeFlap: toon(0xd8342b),
   };
 
-  // Ánh sáng: bóng đèn tròn chập chờn, ánh màn hình, ánh cửa sổ
+  // Ánh sáng
   scene.add(new THREE.HemisphereLight(0xfff4dd, 0x3a3020, 0.45));
   const bulbLight = new THREE.PointLight(0xffd59a, 0.9, 7, 1.6);
-  bulbLight.position.set(0.3, 2.45, -1.0);
+  bulbLight.position.set(-0.8, 2.45, -1.2);
   scene.add(bulbLight);
-  const screenLight = new THREE.PointLight(0x7dffb0, 0.5, 2.6, 2);
-  screenLight.position.set(-0.55, 1.1, -1.5);
+  const screenLight = new THREE.PointLight(0x9fd8ff, 0.5, 2.4, 2);
+  screenLight.position.set(-1.3, 1.1, -1.25);
   scene.add(screenLight);
   const sun = new THREE.DirectionalLight(0xffffff, 0.3);
   sun.position.set(2, 4, -5);
   scene.add(sun);
 
-  // Phòng: sàn gỗ, hai bức tường loang lổ có vết nứt
-  for (let i = 0; i < 12; i++) scene.add(box(6, 0.04, 0.42, i % 2 ? M.floorA : M.floorB, 0, -0.02, -2.5 + 0.21 + i * 0.42));
-  scene.add(box(6, 3.2, 0.1, M.wall, 0, 1.6, -2.55));
-  scene.add(box(0.1, 3.2, 5, M.wall, -3.05, 1.6, 0));
-  for (const [w, h, x, y] of [[0.9, 0.5, -0.9, 2.7], [0.6, 0.8, 2.4, 0.6], [1.2, 0.35, 0.6, 0.25]]) scene.add(box(w, h, 0.02, M.wallStain, x, y, -2.49));
-  scene.add(box(0.02, 1.6, 0.9, M.wallStain, -2.99, 1.2, 1.0));
-  // Vết nứt dạng gấp khúc
-  [[-2.3, 2.9, 0.5], [-2.15, 2.55, -0.6], [-2.25, 2.2, 0.4]].forEach(([x, y, r]) => { const c = box(0.03, 0.4, 0.01, M.wallDark, x, y, -2.49); c.rotation.z = r; scene.add(c); });
+  // Phòng
+  const floorPlanks = [];
+  for (let i = 0; i < 10; i++) { const p = box(6.2, 0.04, 0.42, i % 2 ? M.floorA : M.floorB, 0, -0.02, -2.5 + 0.21 + i * 0.42); floorPlanks.push(p); scene.add(p); }
+  scene.add(box(6.2, 3.2, 0.1, M.wall, 0, 1.6, -2.55));
+  scene.add(box(0.1, 3.2, 4.2, M.wall, -3.05, 1.6, -0.45));
+  const grime = new THREE.Group();
+  scene.add(grime);
+  for (const [w, h, x, y] of [[0.9, 0.5, 0.2, 2.7], [0.6, 0.8, 2.5, 0.6], [1.2, 0.35, -0.2, 0.25]]) grime.add(box(w, h, 0.02, M.wallStain, x, y, -2.49));
+  grime.add(box(0.02, 1.4, 0.9, M.wallStain, -2.99, 1.2, 0.4));
+  [[2.3, 2.9, 0.5], [2.45, 2.55, -0.6], [2.35, 2.2, 0.4]].forEach(([x, y, r]) => { const c = box(0.03, 0.4, 0.01, M.wallDark, x, y, -2.49); c.rotation.z = r; grime.add(c); });
 
-  // Cửa sổ: bầu trời đổi theo giờ Việt Nam, một ô kính vỡ dán bìa các tông
+  // Cửa sổ có bậu trong nhà (chỗ mèo ngồi)
   const win = new THREE.Group();
-  win.position.set(1.55, 1.85, -2.49);
+  win.position.set(1.15, 1.8, -2.49);
   scene.add(win);
   const sky = box(1.1, 0.9, 0.01, M.glass);
   win.add(sky);
   const skyBody = mesh(new THREE.CircleGeometry(0.09, 20), new THREE.MeshBasicMaterial({ color: 0xffffff }), -0.25, 0.2, 0.01);
   win.add(skyBody);
-  for (const [w, h, x, y] of [[1.22, 0.06, 0, 0.48], [1.22, 0.06, 0, -0.48], [0.06, 1.0, -0.58, 0], [0.06, 1.0, 0.58, 0], [0.04, 0.9, 0, 0], [1.1, 0.04, 0, 0]]) win.add(box(w, h, 0.06, M.woodDark, x, y, 0.02));
+  const winFrame = new THREE.Group();
+  for (const [w, h, x, y] of [[1.22, 0.06, 0, 0.48], [1.22, 0.06, 0, -0.48], [0.06, 1.0, -0.58, 0], [0.06, 1.0, 0.58, 0], [0.04, 0.9, 0, 0], [1.1, 0.04, 0, 0]]) winFrame.add(box(w, h, 0.06, M.woodDark, x, y, 0.02));
+  win.add(winFrame);
+  const sill = box(1.3, 0.05, 0.28, M.woodDark, 0, -0.5, 0.14);
+  win.add(sill);
   const cardboard = new THREE.Group();
   cardboard.add(box(0.5, 0.4, 0.015, M.cardboard, 0, 0, 0));
   [0.7, -0.7].forEach((r) => { const t = box(0.62, 0.06, 0.005, M.tape, 0, 0, 0.012); t.rotation.z = r; cardboard.add(t); });
   cardboard.position.set(0.28, -0.22, 0.03);
   win.add(cardboard);
 
-  // Lịch treo tường có khoanh hạn chót
-  const calCanvas = document.createElement("canvas");
-  calCanvas.width = 256; calCanvas.height = 320;
-  const calTex = new THREE.CanvasTexture(calCanvas);
-  const calendar = mesh(new THREE.PlaneGeometry(0.5, 0.62), new THREE.MeshBasicMaterial({ map: calTex }), -1.75, 1.9, -2.49);
-  scene.add(calendar);
-  function drawCalendar(deadline) {
-    const c = calCanvas.getContext("2d"), d = new Date(deadline || "2027-10-28");
+  // Mèo hoang trên bậu cửa sổ, béo lên theo số người theo dõi
+  const cat = new THREE.Group();
+  cat.position.set(-0.3, -0.47, 0.16);
+  win.add(cat);
+  const catBody = mesh(new THREE.SphereGeometry(0.11, 16, 12), M.cat, 0, 0.1, 0);
+  cat.add(catBody);
+  const catHead = new THREE.Group();
+  catHead.position.set(0, 0.24, 0.05);
+  cat.add(catHead);
+  catHead.add(mesh(new THREE.SphereGeometry(0.075, 14, 10), M.cat));
+  catHead.add(mesh(new THREE.SphereGeometry(0.035, 10, 8), M.catLight, 0, -0.02, 0.06));
+  [-1, 1].forEach((s) => {
+    const ear = mesh(new THREE.ConeGeometry(0.03, 0.06, 4), M.cat, s * 0.045, 0.07, 0); ear.rotation.z = s * -0.3; catHead.add(ear);
+    const eye = mesh(new THREE.SphereGeometry(0.012, 8, 6), M.black, s * 0.03, 0.01, 0.068); catHead.add(eye);
+  });
+  const tail = new THREE.Group();
+  tail.position.set(0.08, 0.06, -0.06);
+  tail.add(mesh(new THREE.CylinderGeometry(0.015, 0.012, 0.22, 6), M.cat, 0, 0.11, 0));
+  cat.add(tail);
+  function setCatFat(followers) {
+    const fat = 1 + Math.min(1.6, Math.log10((followers || 0) + 1) * 0.6);
+    catBody.scale.set(fat, 1 + (fat - 1) * 0.35, fat);
+    catHead.position.y = 0.22 + (fat - 1) * 0.04;
+  }
+  setCatFat(0);
+
+  // Khung ảnh tờ tiền đầu tiên (mốc 1)
+  const firstBill = new THREE.Group();
+  firstBill.position.set(0.05, 2.05, -2.48);
+  firstBill.add(box(0.36, 0.26, 0.03, M.woodDark), box(0.3, 0.2, 0.035, toon(0x7fb77e)));
+  firstBill.add(box(0.08, 0.08, 0.04, toon(0xd9ecd5), 0, 0, 0.001));
+  firstBill.visible = false;
+  scene.add(firstBill);
+
+  // Lịch treo tường: đếm ngược, mỗi ngày xé một tờ
+  const cal = new THREE.Group();
+  cal.position.set(-1.25, 1.95, -2.48);
+  scene.add(cal);
+  const calFront = canvasTex(256, 320);
+  const calPage = mesh(new THREE.PlaneGeometry(0.5, 0.62), new THREE.MeshBasicMaterial({ map: calFront.tex }), 0, 0, 0.002);
+  cal.add(box(0.54, 0.08, 0.02, M.stamp, 0, 0.33, 0), calPage);
+  const tearPivot = new THREE.Group();
+  tearPivot.position.set(0, 0.31, 0.006);
+  cal.add(tearPivot);
+  const tearTex = canvasTex(256, 320);
+  const tearPage = mesh(new THREE.PlaneGeometry(0.5, 0.62), new THREE.MeshBasicMaterial({ map: tearTex.tex, transparent: true, side: THREE.DoubleSide }), 0, -0.31, 0);
+  tearPivot.add(tearPage);
+  tearPivot.visible = false;
+  function drawCalPage(t, daysLeft, date) {
+    const c = t.ctx;
     c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, 256, 320);
-    c.fillStyle = "#c0392b"; c.fillRect(0, 0, 256, 70);
-    c.fillStyle = "#fff"; c.font = "bold 34px sans-serif"; c.textAlign = "center";
-    c.fillText("THÁNG " + (d.getMonth() + 1) + "/" + d.getFullYear(), 128, 48);
-    c.fillStyle = "#1d2233"; c.font = "bold 150px sans-serif"; c.fillText(String(d.getDate()), 128, 230);
-    c.strokeStyle = "#c0392b"; c.lineWidth = 10; c.beginPath(); c.ellipse(128, 180, 100, 86, -0.1, 0, Math.PI * 2); c.stroke();
-    c.fillStyle = "#c0392b"; c.font = "bold 30px sans-serif"; c.fillText("HẠN TRẢ NỢ", 128, 295);
-    calTex.needsUpdate = true;
+    c.fillStyle = "#c0392b"; c.font = "bold 28px sans-serif"; c.textAlign = "center";
+    c.fillText(date.toLocaleDateString("vi-VN"), 128, 40);
+    c.fillStyle = "#1d2233"; c.font = "bold 24px sans-serif"; c.fillText("CÒN", 128, 92);
+    c.font = "bold " + (daysLeft > 99 ? 120 : 150) + "px sans-serif"; c.fillText(String(daysLeft), 128, 218);
+    c.font = "bold 26px sans-serif"; c.fillText("NGÀY", 128, 258);
+    c.fillStyle = "#c0392b"; c.font = "bold 20px sans-serif"; c.fillText("TỚI HẠN TRẢ NỢ", 128, 298);
+    t.tex.needsUpdate = true;
   }
-  drawCalendar();
+  let calDays = null, tearStart = -1;
+  function updateCalendar(deadline) {
+    const now = new Date(), days = Math.max(0, Math.ceil((new Date(deadline || "2027-10-28") - now) / 86400000));
+    if (days === calDays) return;
+    drawCalPage(calFront, days, now);
+    drawCalPage(tearTex, days + 1, new Date(now.getTime() - 86400000));
+    calDays = days;
+    if (!reduce) { tearPivot.visible = true; tearPivot.rotation.set(0, 0, 0); tearPivot.position.set(0, 0.31, 0.006); tearPage.material.opacity = 1; tearStart = performance.now() + 900; }
+  }
 
-  // Bàn gỗ cũ, một chân kê bằng chồng sách
+  // Bàn gỗ kê sát tường trái, một chân kê bằng chồng sách
   const desk = new THREE.Group();
-  desk.position.set(-0.25, 0, -2.05);
+  desk.position.set(-1.6, 0, -1.25);
   scene.add(desk);
-  desk.add(box(1.9, 0.06, 0.8, M.wood, 0, 0.75, 0));
-  for (const [x, z, h] of [[-0.88, -0.34, 0.72], [0.88, -0.34, 0.72], [-0.88, 0.34, 0.72], [0.88, 0.34, 0.6]]) desk.add(box(0.06, h, 0.06, M.woodDark, x, 0.72 - h / 2, z));
-  [[0x8e3b2e, 0], [0x2e5e8e, 0.05], [0x4f7a3a, 0.1]].forEach(([c, y], i) => { const b = box(0.24, 0.05, 0.18, toon(c), 0.88, 0.025 + y, 0.34); b.rotation.y = i * 0.2; desk.add(b); });
+  desk.add(box(0.85, 0.06, 1.7, M.wood, 0, 0.75, 0));
+  for (const [x, z, h] of [[-0.38, -0.8, 0.72], [0.38, -0.8, 0.72], [-0.38, 0.8, 0.72], [0.38, 0.8, 0.6]]) desk.add(box(0.06, h, 0.06, M.woodDark, x, 0.72 - h / 2, z));
+  [[0x8e3b2e, 0], [0x2e5e8e, 0.05], [0x4f7a3a, 0.1]].forEach(([c, y], i) => { const b = box(0.2, 0.05, 0.26, toon(c), 0.38, 0.025 + y, 0.8); b.rotation.y = i * 0.2; desk.add(b); });
 
-  // Máy tính CRT, màn hình hiện sổ nợ thật
-  const crt = new THREE.Group();
-  crt.position.set(-0.45, 0.78, -0.05);
-  desk.add(crt);
-  crt.add(box(0.62, 0.52, 0.46, M.crt, 0, 0.32, 0));
-  crt.add(box(0.44, 0.36, 0.3, M.crtDark, 0, 0.3, -0.34));
-  crt.add(box(0.3, 0.06, 0.26, M.crtDark, 0, 0.03, 0));
-  const scrCanvas = document.createElement("canvas");
-  scrCanvas.width = 512; scrCanvas.height = 384;
-  const scrTex = new THREE.CanvasTexture(scrCanvas);
-  const screen = mesh(new THREE.PlaneGeometry(0.5, 0.38), new THREE.MeshBasicMaterial({ map: scrTex }), 0, 0.33, 0.232);
-  crt.add(screen);
-  const sticky = box(0.12, 0.12, 0.005, M.note, 0.25, 0.52, 0.234);
-  sticky.rotation.z = 0.15;
-  crt.add(sticky);
-  function drawScreen(blink) {
-    const c = scrCanvas.getContext("2d"), s = MONY.stats;
-    c.fillStyle = "#06140c"; c.fillRect(0, 0, 512, 384);
-    c.fillStyle = "#62ff9a"; c.textAlign = "left";
-    c.font = "bold 30px monospace"; c.fillText("C:\\> SO-NO.EXE", 24, 48);
-    c.font = "bold 26px monospace"; c.fillText("CON NO:", 24, 110);
-    c.font = "bold 54px monospace"; c.fillText(vnd(s ? s.remaining : 200000000).replace("đ", "d"), 24, 172);
-    const pct = s && s.debt_total ? s.repaid / s.debt_total : 0;
-    c.strokeStyle = "#62ff9a"; c.lineWidth = 3; c.strokeRect(24, 200, 464, 34);
-    c.fillRect(28, 204, Math.max(0, 456 * pct), 26);
-    c.font = "bold 26px monospace";
-    c.fillText("DA TRA " + (pct * 100).toFixed(2) + "%", 24, 278);
-    const left = s ? Math.max(0, Math.ceil((new Date(s.deadline) - new Date()) / 86400000)) : 365;
-    c.fillText("CON " + left + " NGAY", 24, 318);
-    if (blink) c.fillRect(24, 336, 18, 28);
-    for (let y = 0; y < 384; y += 4) { c.fillStyle = "rgba(0,0,0,0.18)"; c.fillRect(0, y, 512, 2); }
-    scrTex.needsUpdate = true;
+  // Laptop: thân nằm trên bàn, màn hình mở quay về phía Mony và hơi nghiêng ra ngoài
+  const laptop = new THREE.Group();
+  laptop.position.set(-0.05, 0.78, 0.0);
+  laptop.rotation.y = -0.55;
+  desk.add(laptop);
+  laptop.add(box(0.34, 0.02, 0.48, M.laptop, 0, 0.01, 0));
+  laptop.add(box(0.2, 0.004, 0.4, M.laptopDark, 0.03, 0.022, 0));
+  const lid = new THREE.Group();
+  lid.position.set(-0.17, 0.02, 0);
+  laptop.add(lid);
+  lid.rotation.z = -0.25;
+  lid.add(box(0.015, 0.32, 0.48, M.laptop, 0, 0.16, 0));
+  const scr = canvasTex(512, 340);
+  const screenMesh = mesh(new THREE.PlaneGeometry(0.44, 0.29), new THREE.MeshBasicMaterial({ map: scr.tex }), 0.009, 0.165, 0);
+  screenMesh.rotation.y = Math.PI / 2;
+  lid.add(screenMesh);
+  function drawScreen(blink, asleep) {
+    const c = scr.ctx, s = MONY.stats, st = MONY.milestone;
+    if (asleep) {
+      c.fillStyle = "#05070c"; c.fillRect(0, 0, 512, 340);
+      const t = performance.now() / 1000;
+      c.fillStyle = "rgba(120,160,255,0.35)"; c.font = "bold 40px monospace"; c.textAlign = "center";
+      c.fillText("💤", 256 + Math.sin(t * 0.7) * 150, 170 + Math.cos(t * 0.9) * 90);
+      scr.tex.needsUpdate = true; return;
+    }
+    c.fillStyle = "#0e1a2b"; c.fillRect(0, 0, 512, 340);
+    c.fillStyle = "#1e3350"; c.fillRect(0, 0, 512, 38);
+    c.fillStyle = "#9fd8ff"; c.textAlign = "left"; c.font = "bold 22px monospace"; c.fillText("so-no.xlsx", 16, 27);
+    c.fillStyle = "#ffffff"; c.font = "bold 22px monospace";
+    const next = st && st.next ? st.next : null;
+    c.fillText(next ? "MOC: " + next.name.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toUpperCase() : "TRA XONG NO!", 16, 82);
+    const repaid = s ? s.repaid : 0;
+    const from = st ? st.prevAmount : 0, to = next ? next.amount : (s ? s.debt_total : 1);
+    const frac = next ? Math.max(0, Math.min(1, (repaid - from) / Math.max(1, to - from))) : 1;
+    c.font = "bold 44px monospace"; c.fillStyle = "#ffd166";
+    c.fillText(next ? "CON " + vnd(Math.max(0, to - repaid)).replace("đ", "d") : "100%", 16, 140);
+    c.strokeStyle = "#9fd8ff"; c.lineWidth = 3; c.strokeRect(16, 162, 480, 30);
+    c.fillStyle = "#6fe39a"; c.fillRect(20, 166, Math.max(0, 472 * frac), 22);
+    c.fillStyle = "#9fd8ff"; c.font = "bold 22px monospace";
+    c.fillText("TONG NO CON: " + vnd(s ? s.remaining : 200000000).replace("đ", "d"), 16, 230);
+    c.fillText("NGUOI THEO DOI: " + (s ? s.followers : 0), 16, 266);
+    if (blink) c.fillRect(16, 286, 14, 26);
+    scr.tex.needsUpdate = true;
   }
 
-  // Đồ trên bàn: bàn phím, ly mì, xấp hóa đơn đóng dấu đỏ
-  desk.add(box(0.48, 0.03, 0.16, M.crtDark, 0.25, 0.795, 0.25));
+  // Đồ trên bàn: ly mì, xấp hóa đơn đóng dấu đỏ
   const cup = new THREE.Group();
-  cup.position.set(0.7, 0.78, 0.05);
+  cup.position.set(0.15, 0.78, 0.6);
   cup.add(mesh(new THREE.CylinderGeometry(0.08, 0.06, 0.16, 20), M.cup, 0, 0.08, 0), mesh(new THREE.CylinderGeometry(0.082, 0.077, 0.04, 20), M.cupBand, 0, 0.1, 0));
   [-0.015, 0.015].forEach((x) => { const st = mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.3, 6), M.woodDark, x, 0.22, 0); st.rotation.z = 0.35; cup.add(st); });
   desk.add(cup);
-  for (let i = 0; i < 5; i++) { const b = box(0.22, 0.008, 0.3, M.paper, -0.0 + i * 0.01, 0.785 + i * 0.008, 0.1); b.rotation.y = (i - 2) * 0.12; desk.add(b); }
-  const st = box(0.06, 0.003, 0.06, M.stamp, 0.05, 0.83, 0.12); st.rotation.y = 0.3; desk.add(st);
+  for (let i = 0; i < 5; i++) { const b = box(0.22, 0.008, 0.3, M.paper, 0.1 + i * 0.01, 0.785 + i * 0.008, -0.55); b.rotation.y = (i - 2) * 0.12; desk.add(b); }
+  const stampMark = box(0.06, 0.003, 0.06, M.stamp, 0.12, 0.83, -0.53); stampMark.rotation.y = 0.3; desk.add(stampMark);
+  // Đèn bàn (từ phòng trọ mới)
+  const deskLamp = new THREE.Group();
+  deskLamp.position.set(-0.25, 0.78, -0.6);
+  deskLamp.add(mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.03, 16), M.black, 0, 0.015, 0));
+  const lampArm = mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.4, 8), M.black, 0.05, 0.22, 0); lampArm.rotation.z = -0.25; deskLamp.add(lampArm);
+  const shade = mesh(new THREE.ConeGeometry(0.09, 0.12, 16, 1, true), toon(0xf2c14e, { side: THREE.DoubleSide }), 0.12, 0.42, 0); shade.rotation.z = 0.9; deskLamp.add(shade);
+  desk.add(deskLamp);
 
-  // Bóng đèn treo dây
-  scene.add(mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.75, 6), M.wire, 0.3, 2.95, -1.0));
-  const bulb = mesh(new THREE.SphereGeometry(0.07, 16, 12), M.bulb, 0.3, 2.52, -1.0);
-  scene.add(bulb);
+  // Bóng đèn treo dây (phòng trọ) hoặc đèn thả có chao (căn hộ)
+  const bareBulb = new THREE.Group();
+  bareBulb.add(mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.75, 6), M.wire, 0, 0.43, 0), mesh(new THREE.SphereGeometry(0.07, 16, 12), M.bulb, 0, 0, 0));
+  bareBulb.position.set(-0.8, 2.52, -1.2);
+  scene.add(bareBulb);
+  const pendant = new THREE.Group();
+  pendant.add(mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.6, 6), M.wire, 0, 0.4, 0), mesh(new THREE.ConeGeometry(0.22, 0.2, 24, 1, true), toon(0xf4efe4, { side: THREE.DoubleSide }), 0, 0, 0), mesh(new THREE.SphereGeometry(0.06, 12, 8), M.bulb, 0, -0.05, 0));
+  pendant.position.set(-0.8, 2.5, -1.2);
+  scene.add(pendant);
 
-  // Mái dột: giọt nước rơi xuống chiếc xô
+  // Mái dột nhỏ giọt xuống xô
   const bucket = new THREE.Group();
-  bucket.position.set(1.55, 0, -1.0);
-  bucket.add(mesh(new THREE.CylinderGeometry(0.2, 0.16, 0.3, 24, 1, true), new THREE.MeshPhongMaterial({ color: 0x9aa3ad, side: THREE.DoubleSide }), 0, 0.15, 0));
+  bucket.position.set(0.55, 0, -0.75);
+  bucket.add(mesh(new THREE.CylinderGeometry(0.2, 0.16, 0.3, 24, 1, true), M.metal, 0, 0.15, 0));
   bucket.add(mesh(new THREE.CircleGeometry(0.16, 20), M.metal, 0, 0.005, 0).rotateX(-Math.PI / 2));
   const water = mesh(new THREE.CircleGeometry(0.185, 24), M.water, 0, 0.2, 0);
   water.rotation.x = -Math.PI / 2;
@@ -640,29 +770,62 @@ setInterval(load, 60000);
   ripple.rotation.x = -Math.PI / 2;
   bucket.add(ripple);
   scene.add(bucket);
-  const drops = [0, 1, 2].map((i) => { const d = mesh(new THREE.SphereGeometry(0.025, 8, 6), M.water, 1.55, 3.2, -1.0); d.scale.y = 1.6; d.userData.phase = i / 3; scene.add(d); return d; });
+  const drops = [0, 1, 2].map((i) => { const d = mesh(new THREE.SphereGeometry(0.025, 8, 6), M.water, 0.55, 3.2, -0.75); d.scale.y = 1.6; d.userData.phase = i / 3; scene.add(d); return d; });
 
-  // Chậu cây, chỉ xuất hiện khi trả được 75%
+  // Chậu cây
   const plant = new THREE.Group();
-  plant.position.set(2.35, 0, -2.2);
+  plant.position.set(2.3, 0, -2.15);
   plant.add(mesh(new THREE.CylinderGeometry(0.16, 0.12, 0.28, 16), M.pot, 0, 0.14, 0));
   for (let i = 0; i < 6; i++) { const l = mesh(new THREE.SphereGeometry(0.13, 10, 8), M.leaf, Math.cos(i) * 0.12, 0.4 + (i % 3) * 0.1, Math.sin(i) * 0.12); l.scale.set(0.6, 1.3, 0.6); plant.add(l); }
-  plant.visible = false;
   scene.add(plant);
+
+  // Nội thất theo nhà: giường + thảm + poster (phòng trọ mới), sofa + kệ sách (căn hộ), đèn dây + băng rôn
+  const bed = new THREE.Group();
+  bed.position.set(2.0, 0, -1.5);
+  bed.add(box(1.0, 0.3, 1.9, M.woodDark, 0, 0.15, 0), box(0.95, 0.14, 1.85, M.fabricLight, 0, 0.37, 0), box(0.6, 0.1, 0.3, M.fabric, 0, 0.48, -0.7), box(0.97, 0.05, 1.1, M.fabric, 0, 0.45, 0.35));
+  scene.add(bed);
+  const rug = mesh(new THREE.CircleGeometry(0.9, 32), M.rug, -0.5, 0.005, -1.0);
+  rug.rotation.x = -Math.PI / 2;
+  scene.add(rug);
+  const poster = box(0.5, 0.7, 0.01, toon(0x2a9d8f), 2.4, 1.9, -2.48);
+  scene.add(poster);
+  const sofa = new THREE.Group();
+  sofa.position.set(2.0, 0, -1.4);
+  sofa.rotation.y = -Math.PI / 2;
+  sofa.add(box(1.6, 0.4, 0.75, M.sofa, 0, 0.2, 0), box(1.6, 0.5, 0.2, M.sofa, 0, 0.55, -0.3), box(0.2, 0.55, 0.75, M.sofa, -0.8, 0.3, 0), box(0.2, 0.55, 0.75, M.sofa, 0.8, 0.3, 0));
+  scene.add(sofa);
+  const shelf = new THREE.Group();
+  shelf.position.set(-0.2, 1.55, -2.42);
+  shelf.add(box(1.0, 0.04, 0.2, M.wood, 0, 0, 0));
+  [0x2e5e8e, 0x8e3b2e, 0x4f7a3a, 0xf2c14e, 0x6c8fbf].forEach((c, i) => shelf.add(box(0.07, 0.24, 0.16, toon(c), -0.35 + i * 0.09, 0.14, 0)));
+  scene.add(shelf);
+  const stringLights = new THREE.Group();
+  for (let i = 0; i < 18; i++) { const x = -2.9 + i * 0.34; stringLights.add(mesh(new THREE.SphereGeometry(0.035, 8, 6), new THREE.MeshBasicMaterial({ color: [0xffd166, 0xff8fab, 0x9fd8ff][i % 3] }), x, 2.95 - Math.sin((i % 6) / 6 * Math.PI) * 0.12, -2.45)); }
+  scene.add(stringLights);
+  const banner = canvasTex(512, 128);
+  banner.ctx.fillStyle = "#c0392b"; banner.ctx.fillRect(0, 0, 512, 128);
+  banner.ctx.fillStyle = "#fff"; banner.ctx.font = "bold 64px sans-serif"; banner.ctx.textAlign = "center"; banner.ctx.fillText("TRẢ XONG NỢ!", 256, 86);
+  banner.tex.needsUpdate = true;
+  const bannerMesh = mesh(new THREE.PlaneGeometry(1.6, 0.4), new THREE.MeshBasicMaterial({ map: banner.tex }), 0.2, 2.6, -2.47);
+  scene.add(bannerMesh);
+  const confetti = [];
+  for (let i = 0; i < 40; i++) { const c = box(0.04, 0.04, 0.005, new THREE.MeshBasicMaterial({ color: [0xffd166, 0xff8fab, 0x9fd8ff, 0x6fe39a][i % 4], side: THREE.DoubleSide })); c.userData = { x: -2.5 + Math.random() * 5, z: -2.3 + Math.random() * 3, s: 0.3 + Math.random() * 0.5, p: Math.random() }; confetti.push(c); scene.add(c); }
 
   // Ghế nhựa đỏ
   const stool = new THREE.Group();
-  stool.position.set(0.2, 0, -1.05);
+  stool.position.set(-0.85, 0, -1.25);
   stool.add(mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.04, 24), M.stool, 0, 0.44, 0));
   for (let i = 0; i < 4; i++) { const a = Math.PI / 4 + i * Math.PI / 2; const leg = box(0.05, 0.44, 0.05, M.stool, Math.cos(a) * 0.15, 0.22, Math.sin(a) * 0.15); leg.rotation.set(Math.sin(a) * -0.1, 0, Math.cos(a) * 0.1); stool.add(leg); }
   scene.add(stool);
 
-  // Mony: dựng quay mặt về +z rồi xoay 180 độ để nhìn vào máy tính
+  // Mony: dựng quay mặt về +z rồi xoay để nhìn vào laptop (-x)
+  const SEAT = new V(-0.85, 0.46, -1.25);
+  const FACE_DESK = -Math.PI / 2 + 0.45;
   const mony = new THREE.Group();
-  mony.position.set(0.2, 0.46, -1.05);
-  mony.rotation.y = Math.PI;
+  mony.position.copy(SEAT);
+  mony.rotation.y = FACE_DESK;
   scene.add(mony);
-  const limb = (r, mat) => { const g = new THREE.Group(); const m = mesh(new THREE.CylinderGeometry(r, r * 0.9, 1, 12), mat, 0, -0.5, 0); g.add(m); return g; };
+  const limb = (r, mat) => { const g = new THREE.Group(); g.add(mesh(new THREE.CylinderGeometry(r, r * 0.9, 1, 12), mat, 0, -0.5, 0)); return g; };
   const UP = new V(0, -1, 0);
   function aim(g, from, to) {
     const d = to.clone().sub(from);
@@ -670,13 +833,23 @@ setInterval(load, 60000);
     g.quaternion.setFromUnitVectors(UP, d.clone().normalize());
     g.scale.set(1, d.length(), 1);
   }
-  // Chân ngồi: đùi nằm ngang, ống chân thẳng đứng
-  for (const side of [-1, 1]) {
-    const thigh = limb(0.11, M.pants); aim(thigh, new V(side * 0.12, 0.04, 0), new V(side * 0.14, 0.02, 0.42)); mony.add(thigh);
-    const shin = limb(0.09, M.pants); aim(shin, new V(side * 0.14, 0.02, 0.42), new V(side * 0.15, -0.4, 0.46)); mony.add(shin);
-    mony.add(box(0.13, 0.04, 0.26, M.sandal, side * 0.15, -0.44, 0.52));
-    mony.add(mesh(new THREE.SphereGeometry(0.06, 10, 8), M.skin, side * 0.15, -0.4, 0.55));
+  const legs = [-1, 1].map((side) => {
+    const thigh = limb(0.11, M.pants), shin = limb(0.09, M.pants);
+    const foot = box(0.13, 0.04, 0.26, M.sandal), toes = mesh(new THREE.SphereGeometry(0.06, 10, 8), M.skin);
+    mony.add(thigh, shin, foot, toes);
+    return { side, thigh, shin, foot, toes };
+  });
+  function poseLegs(standing) {
+    legs.forEach(({ side, thigh, shin, foot, toes }) => {
+      const hip = new V(side * 0.12, 0.04, 0);
+      const knee = standing ? new V(side * 0.13, -0.2, 0.03) : new V(side * 0.14, 0.02, 0.42);
+      const ankle = standing ? new V(side * 0.14, -0.4, 0.0) : new V(side * 0.15, -0.4, 0.46);
+      aim(thigh, hip, knee); aim(shin, knee, ankle);
+      foot.position.set(ankle.x, ankle.y - 0.04, ankle.z + 0.06);
+      toes.position.set(ankle.x, ankle.y, ankle.z + 0.09);
+    });
   }
+  poseLegs(false);
   const torso = new THREE.Group();
   torso.position.set(0, 0.05, 0);
   mony.add(torso);
@@ -689,9 +862,8 @@ setInterval(load, 60000);
   head.position.set(0, 0.86, 0.04);
   torso.add(head);
   head.add(mesh(new THREE.SphereGeometry(0.22, 24, 18), M.skin));
-  const hairCap = mesh(new THREE.SphereGeometry(0.235, 24, 14, 0, Math.PI * 2, 0, Math.PI / 2.6), M.hair, 0, 0.03, -0.02);
+  head.add(mesh(new THREE.SphereGeometry(0.235, 24, 14, 0, Math.PI * 2, 0, Math.PI / 2.6), M.hair, 0, 0.03, -0.02));
   head.add(mesh(new THREE.SphereGeometry(0.232, 20, 12, 0, Math.PI * 2, Math.PI / 2.6, Math.PI / 2.2), M.hair, 0, 0.0, -0.03).rotateX(-0.5));
-  head.add(hairCap);
   const tufts = [];
   for (let i = 0; i < 7; i++) {
     const t = mesh(new THREE.ConeGeometry(0.06, 0.16, 6), M.hair, Math.cos(i * 0.9) * 0.12, 0.2, Math.sin(i * 0.9) * 0.12);
@@ -706,7 +878,6 @@ setInterval(load, 60000);
   }
   const mouth = mesh(new THREE.TorusGeometry(0.035, 0.01, 6, 12, Math.PI), M.black, 0, -0.1, 0.205);
   head.add(mouth);
-  // Tay: bắp tay, cẳng tay và bàn tay đặt theo điểm đích để đổi tư thế mượt
   const arms = [-1, 1].map((side) => {
     const upper = limb(0.075, M.hoodie), fore = limb(0.065, M.hoodie);
     const hand = mesh(new THREE.SphereGeometry(0.065, 10, 8), M.skin);
@@ -721,34 +892,105 @@ setInterval(load, 60000);
     wave: (side, t) => side > 0
       ? { elbow: new V(0.45, 0.7, 0.2), wrist: new V(0.5 + Math.sin(t * 12) * 0.08, 1.05, 0.25) }
       : { elbow: new V(-0.3, 0.3, 0.22), wrist: new V(-0.13, 0.3, 0.5) },
+    sleep: (side) => ({ elbow: new V(side * 0.32, 0.3, 0.42), wrist: new V(side * -0.05, 0.33, 0.62) }),
   };
   arms.forEach((a) => { const p = POSES.rub(a.side, 0); a.elbow.copy(p.elbow); a.wrist.copy(p.wrist); });
 
-  // Chuỗi hành động: vò đầu là chính, thỉnh thoảng gõ phím
-  let pose = "rub", poseUntil = 0, override = null, overrideUntil = 0;
+  // Chữ Z bay lên khi ngủ
+  const zTex = canvasTex(64, 64);
+  zTex.ctx.fillStyle = "#ffffff"; zTex.ctx.font = "bold 52px sans-serif"; zTex.ctx.textAlign = "center"; zTex.ctx.fillText("Z", 32, 50); zTex.tex.needsUpdate = true;
+  const zs = [0, 1, 2].map((i) => { const z = new THREE.Sprite(new THREE.SpriteMaterial({ map: zTex.tex, transparent: true })); z.userData.p = i / 3; z.visible = false; scene.add(z); return z; });
+
+  // Phong bì ủng hộ bay qua cửa sổ
+  const envelope = new THREE.Group();
+  envelope.add(box(0.26, 0.17, 0.01, M.envelope));
+  const flap = mesh(new THREE.ConeGeometry(0.13, 0.08, 3), M.envelopeFlap, 0, 0.045, 0.008);
+  flap.rotation.z = Math.PI; flap.scale.z = 0.05;
+  envelope.add(flap);
+  envelope.visible = false;
+  scene.add(envelope);
+  let envStart = -1;
+  const ENV_FROM = new V(1.15, 1.75, -2.35), ENV_TO = new V(-0.85, 1.55, -1.25);
+
+  // Hành động
+  let pose = "rub", poseUntil = 0, override = null, overrideUntil = 0, jumpUntil = 0;
   function pickPose(now) {
     if (override && now < overrideUntil) return override;
     override = null;
+    if (MONY.milestone && MONY.milestone.house === 4) return "cheer";
+    if (isNight()) return "sleep";
     if (now > poseUntil) { pose = pose === "rub" ? "type" : "rub"; poseUntil = now + (pose === "rub" ? 6000 : 3500); }
     return pose;
   }
+  function celebrate(ms, text) {
+    const now = performance.now();
+    override = "cheer"; overrideUntil = now + ms; jumpUntil = now + ms;
+    if (text) say(text);
+  }
 
-  // Kích thước theo khung
+  // Áp dụng nhà theo mốc
+  let houseApplied = -1;
+  function applyHouse(st) {
+    const h = st.house;
+    const shabby = h === 0;
+    grime.visible = shabby;
+    M.wall.color.setHex(shabby ? 0xb9b08f : h === 1 ? 0xbfd6e6 : 0xf3efe6);
+    M.floorA.color.setHex(h >= 2 ? 0xc89b6d : 0x7a5a3c);
+    M.floorB.color.setHex(h >= 2 ? 0xb88b5d : 0x6b4d33);
+    const leak = shabby && !st.leakFixed;
+    bucket.visible = leak; drops.forEach((d) => (d.visible = leak));
+    cardboard.visible = shabby && !st.windowFixed;
+    plant.visible = (shabby && st.windowFixed) || h >= 2;
+    firstBill.visible = st.firstMoney;
+    bed.visible = h === 1; rug.visible = h >= 1; poster.visible = h === 1; deskLamp.visible = h >= 1;
+    sofa.visible = h >= 2; shelf.visible = h >= 2;
+    bareBulb.visible = h <= 1; pendant.visible = h >= 2;
+    win.scale.set(h >= 2 ? 1.6 : 1, h >= 3 ? 1.5 : 1, 1);
+    win.position.y = h >= 3 ? 1.55 : 1.8;
+    stringLights.visible = h >= 3;
+    bannerMesh.visible = h === 4; confetti.forEach((c) => (c.visible = h === 4 && !reduce));
+    bulbLight.color.setHex(h >= 2 ? 0xfff2dd : 0xffd59a);
+    if (houseApplied !== -1 && h > houseApplied) celebrate(4000, "Chuyển nhà rồi! " + (st.doneCount ? CONFIG.milestones[st.doneCount - 1].name : ""));
+    houseApplied = h;
+  }
+
+  // Phản ứng khi số liệu thay đổi
+  let last = null, lastDone = null;
+  MONY.onStats = (s, st) => {
+    st = st || MONY.milestone;
+    if (last) {
+      if (s.donated > last.donated) { envStart = performance.now(); setTimeout(() => celebrate(3000, "Có người vừa ủng hộ " + vnd(s.donated - last.donated) + "! Cảm ơn bạn nhiều."), 1500); }
+      else if (s.repaid > last.repaid) celebrate(3000, "Vừa có tiền vào sổ!");
+    }
+    if (st) {
+      if (lastDone !== null && st.doneCount > lastDone && st.house === houseApplied) celebrate(3500, "Đạt mốc: " + CONFIG.milestones[st.doneCount - 1].name + "!");
+      lastDone = st.doneCount;
+      applyHouse(st);
+    }
+    setCatFat(s.followers);
+    updateCalendar(s.deadline);
+    last = s;
+  };
+  if (MONY.stats) MONY.onStats(MONY.stats, MONY.milestone);
+  else { applyHouse({ house: 0, doneCount: 0, leakFixed: false, windowFixed: false, firstMoney: false }); updateCalendar(); }
+  setInterval(() => updateCalendar(MONY.stats && MONY.stats.deadline), 60000);
+
+  // Kích thước theo khung: góc máy ngang ngang tầm mắt
   function resize() {
     const w = canvas.clientWidth, h = canvas.clientHeight;
     if (!w || !h) return;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     const narrow = w / h < 0.9;
-    camera.fov = narrow ? 50 : 38;
-    camera.position.set(narrow ? -0.9 : -1.3, narrow ? 2.5 : 2.3, narrow ? 3.9 : 3.3);
+    camera.fov = narrow ? 56 : 44;
+    camera.position.set(narrow ? -0.5 : 0.1, narrow ? 1.55 : 1.45, narrow ? 5.6 : 5.0);
     camera.lookAt(camTarget);
     camera.updateProjectionMatrix();
   }
   new ResizeObserver(resize).observe(canvas);
   resize();
 
-  // Bấm vào: Mony quay lại vẫy tay và nói câu tiếp theo
+  // Bấm vào: Mony quay ra vẫy tay và nói
   let turnUntil = 0;
   function poke() {
     const now = performance.now();
@@ -758,27 +1000,9 @@ setInterval(load, 60000);
   canvas.addEventListener("click", poke);
   canvas.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); poke(); } });
 
-  // Có tiền vào thì giơ hai tay ăn mừng; trả nợ càng nhiều căn phòng càng tươm tất
-  let lastRepaid = null;
-  function applyProgress(s) {
-    const pct = s.debt_total ? s.repaid / s.debt_total : 0;
-    const leak = pct < 0.25;
-    drops.forEach((d) => (d.visible = leak));
-    bucket.visible = leak;
-    cardboard.visible = pct < 0.5;
-    plant.visible = pct >= 0.75;
-    drawCalendar(s.deadline);
-  }
-  MONY.onStats = (s) => {
-    if (lastRepaid !== null && s.repaid > lastRepaid) { override = "cheer"; overrideUntil = performance.now() + 3000; say("Vừa có tiền vào sổ! Cảm ơn bạn."); }
-    lastRepaid = s.repaid;
-    applyProgress(s);
-  };
-  if (MONY.stats) MONY.onStats(MONY.stats);
-
   // Bầu trời theo giờ Việt Nam
   function updateSky() {
-    const h = (new Date().getUTCHours() + 7) % 24;
+    const h = vnHour();
     let skyC = 0x1b2440, body = 0xf3f0d0, light = 0.08;
     if (h >= 6 && h < 17) { skyC = 0x9fd3ff; body = 0xfff3a0; light = 0.35; }
     else if (h >= 17 && h < 19) { skyC = 0xf4a261; body = 0xffd27f; light = 0.2; }
@@ -798,46 +1022,62 @@ setInterval(load, 60000);
 
   let nextBlink = 2000, lastScreen = 0;
   const t0 = performance.now();
-  const tmp = new V();
   function frame(now) {
     if (!visible || document.hidden) { running = false; return; }
     const t = (now - t0) / 1000;
     const m = reduce ? 0 : 1;
     const cur = pickPose(now);
+    const asleep = cur === "sleep";
+    const standing = cur === "cheer" && now < jumpUntil;
 
     arms.forEach((a) => {
       const target = POSES[cur](a.side, t * m);
       a.elbow.lerp(target.elbow, 0.12);
       a.wrist.lerp(target.wrist, 0.15);
-      const sh = tmp.set(a.side * SHOULDER_X, SHOULDER_Y, 0).clone();
+      const sh = new V(a.side * SHOULDER_X, SHOULDER_Y, 0);
       aim(a.upper, sh, a.elbow);
       aim(a.fore, a.elbow, a.wrist);
       a.hand.position.copy(a.wrist);
     });
+    poseLegs(standing);
 
-    // Đầu cúi khi vò, ngẩng khi gõ, quay ra khi được gọi
+    // Tư thế đầu và thân
     const turning = now < turnUntil;
-    const headX = cur === "rub" ? 0.35 + Math.sin(t * 4.5) * 0.06 * m : cur === "cheer" ? -0.3 : 0.05;
+    const headX = cur === "rub" ? 0.35 + Math.sin(t * 4.5) * 0.06 * m : cur === "cheer" ? -0.3 : asleep ? 0.6 : 0.05;
     head.rotation.x += (headX - head.rotation.x) * 0.1;
-    head.rotation.z = cur === "rub" ? Math.sin(t * 3) * 0.08 * m : 0;
-    torso.rotation.x += ((cur === "rub" ? 0.22 : cur === "type" ? 0.18 : 0) - torso.rotation.x) * 0.08;
-    const turnY = turning ? Math.PI + 2.4 : Math.PI;
+    head.rotation.z = cur === "rub" ? Math.sin(t * 3) * 0.08 * m : asleep ? 0.35 : 0;
+    const torsoX = cur === "rub" ? 0.22 : cur === "type" ? 0.18 : asleep ? 0.75 : 0;
+    torso.rotation.x += (torsoX - torso.rotation.x) * 0.08;
+    const turnY = turning || cur === "cheer" ? 0 : FACE_DESK;
     mony.rotation.y += (turnY - mony.rotation.y) * 0.08;
-    head.rotation.y += ((turning ? 0.4 : 0) - head.rotation.y) * 0.1;
+    head.rotation.y += ((turning ? 0.25 : 0) - head.rotation.y) * 0.1;
     tufts.forEach((tf, i) => (tf.rotation.y = cur === "rub" ? Math.sin(t * 9 + i) * 0.4 * m : 0));
-    torso.position.y = 0.05 + Math.sin(t * 1.6) * 0.008 * m;
+    const breathe = Math.sin(t * (asleep ? 1.1 : 1.6)) * (asleep ? 0.015 : 0.008) * m;
+    torso.position.y = 0.05 + breathe;
+    mony.position.y = SEAT.y + (standing ? 0.36 + Math.abs(Math.sin(t * 8)) * 0.12 * m : 0);
     mouth.rotation.z = cur === "cheer" || turning ? Math.PI : 0;
 
-    // Chớp mắt
+    // Mắt: chớp, hoặc nhắm khi ngủ
     const sb = now - nextBlink;
-    eyes.forEach((e) => (e.scale.y = sb > 0 && sb < 130 ? 0.15 : 1));
+    eyes.forEach((e) => (e.scale.y = asleep || (sb > 0 && sb < 130) ? 0.15 : 1));
     if (sb > 130) nextBlink = now + 2500 + Math.random() * 3500;
 
-    // Đèn chập chờn
-    bulbLight.intensity = 0.9 + (m && Math.random() < 0.02 ? -0.5 : Math.sin(t * 20) * 0.03 * m);
-    screenLight.intensity = 0.45 + Math.sin(t * 30) * 0.03 * m;
+    // Z bay lên khi ngủ
+    const headWorld = head.getWorldPosition(new V());
+    zs.forEach((z) => {
+      z.visible = asleep && !reduce;
+      if (!z.visible) return;
+      const p = (t * 0.35 + z.userData.p) % 1;
+      z.position.set(headWorld.x + 0.15 + p * 0.3, headWorld.y + 0.2 + p * 0.6, headWorld.z + 0.1);
+      z.scale.setScalar(0.08 + p * 0.12);
+      z.material.opacity = 1 - p;
+    });
 
-    // Giọt nước rơi
+    // Đèn
+    bulbLight.intensity = asleep ? 0.25 : 0.9 + (m && Math.random() < 0.02 && houseApplied === 0 ? -0.5 : Math.sin(t * 20) * 0.03 * m);
+    screenLight.intensity = asleep ? 0.12 : 0.45 + Math.sin(t * 30) * 0.03 * m;
+
+    // Giọt nước
     if (bucket.visible) {
       let splash = 0;
       drops.forEach((d) => {
@@ -849,7 +1089,39 @@ setInterval(load, 60000);
       ripple.scale.setScalar(1 + (1 - ripple.material.opacity) * 3);
     }
 
-    if (now - lastScreen > 500) { lastScreen = now; drawScreen(Math.floor(t * 2) % 2 === 0); }
+    // Mèo vẫy đuôi, thỉnh thoảng nghiêng đầu
+    tail.rotation.z = Math.sin(t * 2.2) * 0.5 * m - 0.3;
+    catHead.rotation.z = Math.sin(t * 0.7) > 0.8 ? 0.3 : 0;
+
+    // Phong bì bay
+    if (envStart > 0) {
+      const p = Math.min(1, (now - envStart) / 1500);
+      envelope.visible = p < 1;
+      envelope.position.lerpVectors(ENV_FROM, ENV_TO, p);
+      envelope.position.y += Math.sin(p * Math.PI) * 0.6;
+      envelope.rotation.set(Math.sin(p * 12) * 0.3, p * 6, Math.sin(p * 9) * 0.4);
+      if (p >= 1) envStart = -1;
+    }
+
+    // Lịch xé tờ
+    if (tearStart > 0 && now > tearStart) {
+      const p = Math.min(1, (now - tearStart) / 1400);
+      tearPivot.rotation.x = -p * 1.6;
+      tearPivot.rotation.z = p * 0.6;
+      tearPivot.position.y = 0.31 - p * p * 1.6;
+      tearPivot.position.z = 0.006 + p * 0.5;
+      tearPage.material.opacity = 1 - p * p;
+      if (p >= 1) { tearPivot.visible = false; tearStart = -1; }
+    }
+
+    // Pháo giấy khi trả xong nợ
+    if (houseApplied === 4 && !reduce) confetti.forEach((c) => {
+      const u = c.userData, p = (t * u.s + u.p) % 1;
+      c.position.set(u.x + Math.sin(t + u.p * 9) * 0.2, 3 - p * 3, u.z);
+      c.rotation.set(t * 3 + u.p, t * 2, 0);
+    });
+
+    if (now - lastScreen > 500) { lastScreen = now; drawScreen(Math.floor(t * 2) % 2 === 0, asleep); }
     renderer.render(scene, camera);
     if (reduce) { running = false; return; }
     requestAnimationFrame(frame);
@@ -858,6 +1130,17 @@ setInterval(load, 60000);
   if (reduce) setInterval(kick, 2000);
   setInterval(nextLine, 8000);
   setTimeout(nextLine, 1500);
+
+  // Cho phép xem thử các hiệu ứng: thêm #thu-ung-ho, #thu-dem hoặc #thu-moc-N vào địa chỉ trang
+  function demo() {
+    const h = location.hash;
+    if (h === "#thu-ung-ho") { envStart = performance.now(); setTimeout(() => celebrate(3000, "Có người vừa ủng hộ 50.000đ! Cảm ơn bạn nhiều."), 1500); }
+    if (h === "#thu-dem") { override = "sleep"; overrideUntil = performance.now() + 60000; }
+    const mm = h.match(/^#thu-moc-(\d)$/);
+    if (mm) { const n = Number(mm[1]); const ms = CONFIG.milestones; const amt = n ? ms[Math.min(n, ms.length) - 1].amount : 0; MONY.milestone = milestoneState(amt); applyHouse(MONY.milestone); }
+  }
+  addEventListener("hashchange", demo);
+  setTimeout(demo, 300);
 })();
 </script>
 </body>
