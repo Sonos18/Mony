@@ -80,7 +80,8 @@ button { font: inherit; cursor: pointer; }
 .sheet.plain { background-image: none; }
 
 .hero { display: grid; gap: 18px 28px; grid-template-columns: minmax(0, 1fr); position: relative; overflow: hidden; }
-@media (min-width: 860px) { .hero { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: center; } }
+@media (min-width: 860px) { .hero { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; } }
+.hero-head { grid-column: 1 / -1; display: grid; gap: 14px; min-width: 0; }
 .hero-text { display: grid; gap: 18px; min-width: 0; }
 .stage { position: relative; margin: 0; order: -1; height: clamp(300px, 70vw, 380px); border-radius: 12px; overflow: hidden;
   background: #3a3226; }
@@ -125,7 +126,7 @@ button { font: inherit; cursor: pointer; }
 .skip { position: absolute; top: 10px; right: 10px; border: 1px solid rgba(255,255,255,.4); background: rgba(0,0,0,.4); color: #fff; font-size: .78rem; padding: 4px 12px; border-radius: 999px; z-index: 3; }
 .stage-hint { position: absolute; bottom: 44px; right: 12px; font-size: .74rem; color: #efe6cf; text-shadow: 0 1px 2px #000; }
 .hero .kicker { font: 600 .78rem/1 var(--f-body); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); }
-.hero h1 { font: 400 clamp(2rem, 6vw, 3.4rem)/1.1 var(--f-hand); }
+.hero h1 { font: 400 clamp(2rem, 4.4vw, 3.15rem)/1.15 var(--f-hand); text-wrap: pretty; }
 .hero h1 em { font-style: normal; color: var(--stamp); }
 .hero .story { max-width: 62ch; display: grid; gap: 12px; font-size: 1.04rem; line-height: 2; }
 .stamp {
@@ -229,9 +230,11 @@ td.amt.cost { color: var(--stamp); }
   </header>
 
   <section class="sheet hero" aria-labelledby="hero-title">
-    <div class="hero-text">
+    <div class="hero-head">
       <span class="kicker">Nhật ký công khai · ngày <span id="day-n">1</span></span>
       <h1 id="hero-title">Năm 2046, tôi gục ngã vì làm việc quá sức.<br>Mở mắt ra, tôi 25 tuổi và nợ <em>200 triệu</em>.</h1>
+    </div>
+    <div class="hero-text">
       <div class="story">
         <p>Tôi là Mony. Năm 25 tuổi, tôi ký một khoản vay 200 triệu đồng mà không đọc kỹ. Hai mươi năm sau đó tôi làm ngày làm đêm để trả, lãi chồng lãi, việc chồng việc.</p>
         <p>Bạn gái tôi bỏ đi khi thấy tôi chẳng còn gì ngoài giấy báo nợ. Họ hàng thôi nghe máy, gặp ngoài đường cũng quay mặt. Rồi mẹ tôi đổ bệnh. Tôi ngồi ngoài hành lang bệnh viện, cầm tờ hóa đơn viện phí mà không đủ tiền đóng, và bất lực nhìn mẹ ra đi.</p>
