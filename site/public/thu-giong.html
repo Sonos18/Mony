@@ -26,10 +26,26 @@
   <textarea id="text">Chào bạn. Tôi là Mony. Hôm nay tôi vẫn còn nợ hai trăm triệu, nhưng tôi đi ngủ đúng giờ rồi.</textarea>
   <div id="voices"></div>
 </main>
+<script type="importmap">
+{ "imports": { "onnxruntime-web/wasm": "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.wasm.bundle.min.mjs" } }
+</script>
 <script type="module">
-// Chỉ tải thư viện khi bấm nghe lần đầu
+// Chỉ tải thư viện khi bấm nghe lần đầu. onnxruntime-web được ghim cùng một phiên bản cho cả mã JS (import map ở trên)
+// lẫn file wasm; nếu để CDN tự chọn, nó ghép bản mới với file wasm bản cũ và báo "no available backend found".
+const ORT = "1.22.0";
 let lib = null;
-const load = () => (lib ??= import("https://cdn.jsdelivr.net/npm/@mintplex-labs/piper-tts-web@1.0.5/+esm"));
+const load = () => (lib ??= import("https://cdn.jsdelivr.net/npm/@mintplex-labs/piper-tts-web@1.0.5/dist/piper-tts-web.js").catch((e) => { lib = null; throw e; }));
+let currentVoice = null;
+async function speak(text, voiceId, progress) {
+  const { TtsSession } = await load();
+  // Thư viện giữ một phiên duy nhất và chỉ nạp mô hình lúc tạo phiên, nên đổi giọng thì tạo phiên mới
+  if (currentVoice !== voiceId) { TtsSession._instance = null; currentVoice = voiceId; }
+  const session = await TtsSession.create({
+    voiceId, progress,
+    wasmPaths: { ...TtsSession.WASM_LOCATIONS, onnxWasm: `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ORT}/dist/` },
+  });
+  return session.predict(text);
+}
 
 const VOICES = [
   ["vi_VN-vais1000-medium", "VAIS1000 (chất lượng vừa)"],
@@ -48,8 +64,7 @@ for (const [id, name] of VOICES) {
     status.textContent = "Đang chuẩn bị…";
     const t0 = performance.now();
     try {
-      const { predict } = await load();
-      const wav = await predict({ text: document.getElementById("text").value, voiceId: id }, (p) => {
+      const wav = await speak(document.getElementById("text").value, id, (p) => {
         if (p.total) status.textContent = `Đang tải mô hình: ${Math.round((p.loaded / p.total) * 100)}%`;
       });
       if (audio) audio.pause();
