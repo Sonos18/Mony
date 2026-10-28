@@ -446,9 +446,11 @@ const CONFIG = {
   },
   // Các mốc nhỏ tính theo số tiền đã trả. Mỗi mốc sửa hoặc đổi nhà cho Mony (house: 0 phòng trọ dột, 1 phòng trọ mới, 2 căn hộ mini, 3 căn hộ có ban công, 4 trả xong nợ).
   milestones: [
-    { amount: 1, name: "Đồng đầu tiên", note: "Kiếm được khoản tiền đầu tiên", house: 0 },
-    { amount: 1000000, name: "Vá mái", note: "Hết dột, cất cái xô đi", house: 0 },
-    { amount: 3000000, name: "Thay kính cửa sổ", note: "Bỏ miếng bìa, thêm chậu cây", house: 0 },
+    { amount: 1, name: "Đồng đầu tiên", note: "Kiếm được khoản tiền đầu tiên", house: 0, fix: "firstMoney" },
+    { amount: 200000, name: "Đôi dép mới", note: "Thay đôi dép đứt quai", house: 0, fix: "sandals" },
+    { amount: 500000, name: "Quạt bàn", note: "Mua cái quạt nhỏ đặt cạnh laptop", house: 0, fix: "fan" },
+    { amount: 1000000, name: "Vá mái", note: "Hết dột, cất cái xô đi", house: 0, fix: "leak" },
+    { amount: 3000000, name: "Thay kính cửa sổ", note: "Bỏ miếng bìa, thêm chậu cây", house: 0, fix: "window" },
     { amount: 5000000, name: "Chuyển phòng trọ mới", note: "Tường sơn mới, có giường đàng hoàng", house: 1 },
     { amount: 15000000, name: "Căn hộ mini", note: "Cửa sổ lớn, có sofa", house: 2 },
     { amount: 50000000, name: "Căn hộ có ban công", note: "Có ban công và đèn dây", house: 3 },
@@ -464,7 +466,9 @@ function milestoneState(repaid) {
   const next = ms[doneCount] || null;
   const prevAmount = doneCount ? ms[doneCount - 1].amount : 0;
   const house = doneCount ? ms[doneCount - 1].house : 0;
-  return { doneCount, next, prevAmount, house, leakFixed: doneCount >= 2, windowFixed: doneCount >= 3, firstMoney: doneCount >= 1 };
+  const fixed = new Set(ms.slice(0, doneCount).map((m) => m.fix));
+  return { doneCount, next, prevAmount, house, firstMoney: fixed.has("firstMoney"), newSandals: fixed.has("sandals") || house >= 1,
+    hasFan: fixed.has("fan") || house >= 1, leakFixed: fixed.has("leak") || house >= 1, windowFixed: fixed.has("window") || house >= 1 };
 }
 
 // Dữ liệu mở đầu khi chưa có API (bản xem trước). Tiền đều là 0 vì chưa có giao dịch nào.
@@ -755,8 +759,8 @@ setInterval(load, 60000);
   const M = {
     wall: toon(0xb9b08f), wallStain: toon(0x9c9272), wallDark: toon(0x6f6851), floorA: toon(0x7a5a3c), floorB: toon(0x6b4d33),
     wood: toon(0x8a6642), woodDark: toon(0x5e4329), laptop: toon(0x8f96a3), laptopDark: toon(0x4a4f5a), black: toon(0x1b1d22),
-    stool: toon(0xd8342b), skin: toon(0xf0c29c), hair: toon(0x23242c), hoodie: toon(0x3d5a8c), pants: toon(0x2d3140),
-    sandal: toon(0x3a3a3a), paper: toon(0xf3eedf), stamp: toon(0xc0392b), cup: toon(0xf5f1e8), cupBand: toon(0xe0412f),
+    stool: toon(0xd8342b), skin: toon(0xf0c29c), hair: toon(0x23242c), hoodie: toon(0x55709a), pants: toon(0x3a3f52), patch: toon(0x9a7a52), patch2: toon(0x7d8f5a), stitch: toon(0xefe6cf), tee: toon(0xe9e4d6), cord: toon(0xd9d2bf),
+    sandal: toon(0x4a4642), sandalNew: toon(0x2f7fd0), sandalStrap: toon(0x2a2724), sandalStrapNew: toon(0x1d5aa0), paper: toon(0xf3eedf), stamp: toon(0xc0392b), cup: toon(0xf5f1e8), cupBand: toon(0xe0412f),
     metal: new THREE.MeshPhongMaterial({ color: 0x9aa3ad, shininess: 60, side: THREE.DoubleSide }),
     water: new THREE.MeshPhongMaterial({ color: 0x7fb3d5, transparent: true, opacity: 0.8, shininess: 100 }),
     cardboard: toon(0xb08a55), tape: toon(0xe8dcb0), glass: new THREE.MeshBasicMaterial({ color: 0x9fd3ff }),
@@ -944,6 +948,18 @@ setInterval(load, 60000);
   const lampArm = mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.4, 8), M.black, 0.05, 0.22, 0); lampArm.rotation.z = -0.25; deskLamp.add(lampArm);
   const shade = mesh(new THREE.ConeGeometry(0.09, 0.12, 16, 1, true), toon(0xf2c14e, { side: THREE.DoubleSide }), 0.12, 0.42, 0); shade.rotation.z = 0.9; deskLamp.add(shade);
   desk.add(deskLamp);
+  // Quạt bàn (mốc 500K), quay về phía Mony
+  const fan = new THREE.Group();
+  fan.position.set(-0.26, 0.78, 0.38); fan.rotation.y = -0.8;
+  fan.add(mesh(new THREE.CylinderGeometry(0.08, 0.09, 0.03, 16), M.fabricLight, 0, 0.015, 0));
+  fan.add(mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.2, 8), M.fabricLight, 0, 0.12, 0));
+  const fanHead = new THREE.Group(); fanHead.position.set(0, 0.24, 0); fan.add(fanHead);
+  fanHead.add(mesh(new THREE.SphereGeometry(0.04, 10, 8), M.fabricLight, -0.03, 0, 0));
+  const fanCage = mesh(new THREE.TorusGeometry(0.12, 0.006, 6, 24), M.metal, 0.03, 0, 0); fanCage.rotation.y = Math.PI / 2; fanHead.add(fanCage);
+  const blades = new THREE.Group(); blades.position.set(0.02, 0, 0); fanHead.add(blades);
+  for (let i = 0; i < 3; i++) { const b = mesh(new THREE.SphereGeometry(0.05, 8, 6), toon(0x7fc4e8), 0, Math.cos(i * 2.094) * 0.055, Math.sin(i * 2.094) * 0.055); b.scale.set(0.15, 1, 0.6); b.rotation.x = -i * 2.094; blades.add(b); }
+  fan.visible = false;
+  desk.add(fan);
 
   // Bóng đèn treo dây (phòng trọ) hoặc đèn thả có chao (căn hộ)
   const bareBulb = new THREE.Group();
@@ -1033,17 +1049,37 @@ setInterval(load, 60000);
   const legs = [-1, 1].map((side) => {
     const thigh = limb(0.11, M.pants), shin = limb(0.09, M.pants);
     const foot = box(0.13, 0.04, 0.26, M.sandal), toes = mesh(new THREE.SphereGeometry(0.06, 10, 8), M.skin);
-    mony.add(thigh, shin, foot, toes);
-    return { side, thigh, shin, foot, toes };
+    // Quai dép: dép cũ đứt một bên, dép mới đủ quai
+    const strap = box(0.15, 0.03, 0.04, M.sandalStrap, 0, 0.035, 0.05);
+    const strapBroken = box(0.06, 0.012, 0.04, M.sandalStrap, side * 0.05, 0.022, 0.05);
+    strapBroken.rotation.z = side * 0.5; foot.add(strap, strapBroken);
+    // Gối quần rách: lộ da, viền sợi chỉ tưa
+    const rip = new THREE.Group();
+    const skinHole = mesh(new THREE.SphereGeometry(0.05, 12, 8), M.skin); skinHole.scale.set(1.1, 0.35, 0.8);
+    rip.add(skinHole);
+    for (let i = 0; i < 5; i++) { const th = box(0.005, 0.004, 0.035, M.stitch, Math.cos(i * 1.3) * 0.05, 0.012, Math.sin(i * 1.3) * 0.035); th.rotation.y = i * 1.3; rip.add(th); }
+    if (side > 0) rip.scale.setScalar(0.75);
+    mony.add(thigh, shin, foot, toes, rip);
+    return { side, thigh, shin, foot, toes, strap, strapBroken, rip };
   });
+  function setSandals(isNew) {
+    legs.forEach(({ foot, strap, strapBroken }, i) => {
+      foot.material = isNew ? M.sandalNew : M.sandal;
+      strap.material = isNew ? M.sandalStrapNew : M.sandalStrap;
+      const broken = !isNew && i === 0;
+      strap.visible = !broken; strapBroken.visible = broken;
+    });
+  }
   function poseLegs(standing) {
-    legs.forEach(({ side, thigh, shin, foot, toes }) => {
+    legs.forEach(({ side, thigh, shin, foot, toes, rip }) => {
       const hip = new V(side * 0.12, 0.04, 0);
       const knee = standing ? new V(side * 0.13, -0.2, 0.03) : new V(side * 0.14, 0.02, 0.42);
       const ankle = standing ? new V(side * 0.14, -0.4, 0.0) : new V(side * 0.15, -0.4, 0.46);
       aim(thigh, hip, knee); aim(shin, knee, ankle);
       foot.position.set(ankle.x, ankle.y - 0.04, ankle.z + 0.06);
       toes.position.set(ankle.x, ankle.y, ankle.z + 0.09);
+      if (standing) { rip.position.set(knee.x, knee.y + 0.02, knee.z + 0.1); rip.rotation.set(Math.PI / 2, 0, 0); }
+      else { rip.position.set(knee.x, knee.y + 0.098, knee.z - 0.05); rip.rotation.set(0, 0, 0); }
     });
   }
   poseLegs(false);
@@ -1055,6 +1091,39 @@ setInterval(load, 60000);
   const hood = mesh(new THREE.TorusGeometry(0.17, 0.06, 8, 20, Math.PI), M.hoodie, 0, 0.66, -0.12);
   hood.rotation.x = -0.9;
   torso.add(hood);
+  // Áo hoodie cũ: cổ áo thun lộ ra, dây mũ, miếng vá có đường chỉ, lỗ thủng ở vai, gấu áo tưa
+  torso.add(mesh(new THREE.TorusGeometry(0.11, 0.025, 6, 18), M.tee, 0, 0.66, 0.06).rotateX(Math.PI / 2 - 0.25));
+  for (const sx of [-0.05, 0.05]) {
+    const c = mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.2, 6), M.cord, sx, 0.52, 0.255); c.rotation.x = -0.12; torso.add(c);
+    torso.add(mesh(new THREE.SphereGeometry(0.013, 6, 6), M.cord, sx, 0.42, 0.265));
+  }
+  function patchOn(mat, w, h, y, ang, tilt) {
+    const g = new THREE.Group();
+    g.add(box(w, h, 0.012, mat));
+    const n = Math.round((w + h) / 0.03);
+    for (let i = 0; i < n; i++) {
+      const u = i / n, onTop = u < 0.5, k = (u % 0.5) * 2;
+      const st = box(0.012, 0.004, 0.004, M.stitch, onTop ? -w / 2 + k * w : (i % 2 ? -1 : 1) * w / 2, onTop ? (i % 2 ? h / 2 : -h / 2) : -h / 2 + k * h, 0.008);
+      if (!onTop) st.rotation.z = Math.PI / 2;
+      g.add(st);
+    }
+    const r = 0.268 - (y - 0.3) * 0.05;
+    g.position.set(Math.sin(ang) * r, y, Math.cos(ang) * r);
+    g.rotation.set(0, ang, tilt);
+    torso.add(g);
+  }
+  patchOn(M.patch, 0.12, 0.1, 0.22, 0.55, 0.15);
+  patchOn(M.patch2, 0.09, 0.08, 0.4, -0.9, -0.2);
+  patchOn(M.patch, 0.1, 0.12, 0.3, Math.PI + 0.3, 0.1);
+  const tear = new THREE.Group();
+  tear.add(mesh(new THREE.CircleGeometry(0.035, 10), M.tee));
+  for (let i = 0; i < 6; i++) { const th = box(0.004, 0.022, 0.004, M.stitch, Math.cos(i) * 0.038, Math.sin(i) * 0.038, 0.002); th.rotation.z = i + Math.PI / 2; tear.add(th); }
+  tear.position.set(-0.2, 0.5, 0.15); tear.lookAt(new V(-0.6, 0.6, 0.45)); torso.add(tear);
+  for (let i = 0; i < 16; i++) {
+    const a = (i / 16) * Math.PI * 2, len = 0.025 + ((i * 7) % 5) * 0.008;
+    const fr = mesh(new THREE.ConeGeometry(0.018, len, 4), M.hoodie, Math.sin(a) * 0.272, -len / 2 + 0.005, Math.cos(a) * 0.272);
+    fr.rotation.x = Math.PI; torso.add(fr);
+  }
   const head = new THREE.Group();
   head.position.set(0, 0.86, 0.04);
   torso.add(head);
@@ -1075,9 +1144,13 @@ setInterval(load, 60000);
   }
   const mouth = mesh(new THREE.TorusGeometry(0.035, 0.01, 6, 12, Math.PI), M.black, 0, -0.1, 0.205);
   head.add(mouth);
+  head.add(mesh(new THREE.SphereGeometry(0.028, 10, 8), toon(0xe8b48c), 0, -0.04, 0.22));
   const arms = [-1, 1].map((side) => {
     const upper = limb(0.075, M.hoodie), fore = limb(0.065, M.hoodie);
     const hand = mesh(new THREE.SphereGeometry(0.065, 10, 8), M.skin);
+    // Miếng vá khuỷu tay, chạy theo cẳng tay
+    const ep = mesh(new THREE.CylinderGeometry(0.071, 0.071, 0.22, 12, 1, true, side > 0 ? 0 : Math.PI, Math.PI), M.patch2, 0, -0.14, 0);
+    fore.add(ep);
     torso.add(upper, fore, hand);
     return { side, upper, fore, hand, elbow: new V(), wrist: new V() };
   });
@@ -1140,6 +1213,7 @@ setInterval(load, 60000);
     cardboard.visible = shabby && !st.windowFixed;
     plant.visible = (shabby && st.windowFixed) || h >= 2;
     firstBill.visible = st.firstMoney;
+    fan.visible = !!st.hasFan; setSandals(!!st.newSandals);
     bed.visible = h === 1; rug.visible = h >= 1; poster.visible = h === 1; deskLamp.visible = h >= 1;
     sofa.visible = h >= 2; shelf.visible = h >= 2;
     bareBulb.visible = h <= 1; pendant.visible = h >= 2;
@@ -1170,7 +1244,7 @@ setInterval(load, 60000);
     last = s;
   };
   if (MONY.stats) MONY.onStats(MONY.stats, MONY.milestone);
-  else { applyHouse({ house: 0, doneCount: 0, leakFixed: false, windowFixed: false, firstMoney: false }); updateCalendar(); }
+  else { applyHouse(milestoneState(0)); updateCalendar(); }
   setInterval(() => updateCalendar(MONY.stats && MONY.stats.deadline), 60000);
 
   // Kích thước theo khung: góc máy ngang ngang tầm mắt
@@ -1238,6 +1312,7 @@ setInterval(load, 60000);
       a.hand.position.copy(a.wrist);
     });
     poseLegs(standing);
+    if (fan.visible) { blades.rotation.x += 0.35 * m; fanHead.rotation.y = Math.sin(t * 0.6 * m) * 0.5; }
 
     // Tư thế đầu và thân
     const turning = now < turnUntil;
@@ -1334,7 +1409,7 @@ setInterval(load, 60000);
     const h = location.hash;
     if (h === "#thu-ung-ho") { envStart = performance.now(); setTimeout(() => celebrate(3000, "Có người vừa ủng hộ 50.000đ! Cảm ơn bạn nhiều."), 1500); }
     if (h === "#thu-dem") { override = "sleep"; overrideUntil = performance.now() + 60000; }
-    const mm = h.match(/^#thu-moc-(\d)$/);
+    const mm = h.match(/^#thu-moc-(\d+)$/);
     if (mm) { const n = Number(mm[1]); const ms = CONFIG.milestones; const amt = n ? ms[Math.min(n, ms.length) - 1].amount : 0; MONY.milestone = milestoneState(amt); applyHouse(MONY.milestone); }
   }
   addEventListener("hashchange", demo);

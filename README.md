@@ -9,6 +9,8 @@ Thay vì nhắm thẳng 200 triệu, trang hiện **mốc tiếp theo**. Các m�
 | Mốc | Số tiền đã trả | Nhà |
 |---|---|---|
 | Đồng đầu tiên | 1đ | Treo khung tờ tiền đầu tiên |
+| Đôi dép mới | 200 nghìn | Thay đôi dép đứt quai bằng dép mới |
+| Quạt bàn | 500 nghìn | Quạt nhỏ quay cạnh laptop |
 | Vá mái | 1 triệu | Hết dột, cất xô |
 | Thay kính cửa sổ | 3 triệu | Bỏ miếng bìa, thêm chậu cây |
 | Chuyển phòng trọ mới | 5 triệu | Tường sơn mới, giường, thảm, đèn bàn |
@@ -19,7 +21,7 @@ Thay vì nhắm thẳng 200 triệu, trang hiện **mốc tiếp theo**. Các m�
 
 **Giọng nói:** Mony đọc to lời thoại và đoạn mở đầu bằng giọng tiếng Việt có sẵn trong trình duyệt (Web Speech API, miễn phí). Khách bấm nút "Bật tiếng" trên khung cảnh một lần; lựa chọn được nhớ trên trình duyệt đó. Giọng phụ thuộc máy khách; máy không có giọng tiếng Việt sẽ đọc bằng giọng mặc định và hiện lời nhắc.
 
-Xem thử hiệu ứng bằng cách thêm vào cuối địa chỉ trang: `#thu-ung-ho` (phong bì), `#thu-dem` (ngủ gục), `#thu-moc-0` đến `#thu-moc-8` (nhà ở từng mốc).
+Xem thử hiệu ứng bằng cách thêm vào cuối địa chỉ trang: `#thu-ung-ho` (phong bì), `#thu-dem` (ngủ gục), `#thu-moc-0` đến `#thu-moc-10` (nhà ở từng mốc).
 
 Repo gồm hai phần:
 
