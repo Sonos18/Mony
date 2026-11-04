@@ -475,6 +475,9 @@ td.amt.cost { color: var(--stamp); }
       <select id="pr-level" aria-label="Trình độ tiếng Anh của bạn">
         <option value="A2">Mới bắt đầu (A2)</option><option value="B1" selected>Trung bình (B1)</option><option value="B2">Khá (B2)</option>
       </select>
+      <select id="pr-spice" aria-label="Độ cà khịa của Mony" title="Mony trêu lỗi sai của bạn tới mức nào">
+        <option value="gentle">Mony hiền</option><option value="light" selected>Khịa nhẹ</option><option value="savage">Mỏ hỗn 🌶️</option>
+      </select>
       <input id="pr-name" maxlength="30" placeholder="Tên gọi (tuỳ chọn)" aria-label="Mony nên gọi bạn là gì">
       <button class="btn" id="pr-end" type="button" disabled>Kết thúc và tổng kết</button>
     </div>
@@ -1824,7 +1827,7 @@ setInterval(load, 60000);
 // và có thể mang sang máy khác bằng một link chứa dữ liệu sau dấu #.
 (function () {
   const form = $("talk"), input = $("talk-input"), send = $("talk-send"), mic = $("talk-mic"), note = $("talk-note");
-  const bubble = $("bubble"), pick = $("pr-scenario"), levelSel = $("pr-level"), nameIn = $("pr-name"), endBtn = $("pr-end");
+  const bubble = $("bubble"), pick = $("pr-scenario"), levelSel = $("pr-level"), spiceSel = $("pr-spice"), nameIn = $("pr-name"), endBtn = $("pr-end");
   const goalsEl = $("pr-goals"), tipEl = $("talk-tip"), recapEl = $("recap");
   const NOTE = note.textContent;
   const PLACEHOLDER = input.placeholder;
@@ -1832,7 +1835,7 @@ setInterval(load, 60000);
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 
   // ---- Hồ sơ người học trên trình duyệt ----
-  const blank = () => ({ name: "", level: "B1", scenario: "free", sessions: 0, streak: 0, lastDay: "", words: [], mistakes: [], bid: "" });
+  const blank = () => ({ name: "", level: "B1", spice: "light", scenario: "free", sessions: 0, streak: 0, lastDay: "", words: [], mistakes: [], bid: "" });
   let L = blank();
   try { L = Object.assign(blank(), JSON.parse(localStorage.getItem("mony.learner") || "{}")); } catch {}
   // Link "mang sang máy khác": #hoc=<dữ liệu>
@@ -1855,6 +1858,12 @@ setInterval(load, 60000);
   store();
   levelSel.value = L.level; nameIn.value = L.name;
   levelSel.addEventListener("change", () => { L.level = levelSel.value; store(); });
+  if (!["gentle", "light", "savage"].includes(L.spice)) L.spice = "light";
+  spiceSel.value = L.spice;
+  spiceSel.addEventListener("change", () => {
+    L.spice = spiceSel.value; store();
+    if (L.spice === "savage") note.textContent = "Mony sẽ cà khịa lỗi sai của bạn cho vui, không chửi tục và không nhắm vào con người bạn. Thấy quá thì chọn lại Khịa nhẹ nhé.";
+  });
   nameIn.addEventListener("change", () => { L.name = nameIn.value.trim().slice(0, 30); store(); });
   const profile = () => [
     L.name && "Name: " + L.name + ".",
@@ -1910,7 +1919,7 @@ setInterval(load, 60000);
   }).catch(() => {});
 
   let busy = false;
-  const body = (extra) => JSON.stringify({ messages: turns.slice(extra.summary ? -20 : -10), scenario: pick.value, level: L.level, profile: profile(), bid: L.bid, ...extra });
+  const body = (extra) => JSON.stringify({ messages: turns.slice(extra.summary ? -20 : -10), scenario: pick.value, level: L.level, spice: L.spice, profile: profile(), bid: L.bid, ...extra });
 
   async function ask(text) {
     text = text.trim();

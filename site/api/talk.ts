@@ -13,6 +13,7 @@ const PER_VISITOR = Number(process.env.TALK_DAILY_PER_VISITOR ?? 30);
 const PER_IP = Number(process.env.TALK_DAILY_PER_IP ?? 150);
 const PER_DAY = Number(process.env.TALK_DAILY_TOTAL ?? 4000);
 const LEVELS = ["A2", "B1", "B2"];
+const SPICES = ["gentle", "light", "savage"];
 
 const MOODS = ["neutral", "happy", "laugh", "sad", "tired", "surprised", "shy", "worried", "angry"];
 type Line = { en: string; vi: string; mood?: string; tip?: string };
@@ -44,7 +45,15 @@ function cleanTurns(raw: unknown, keep = 6): Turn[] {
   return out[out.length - 1]?.role === "user" ? out : [];
 }
 
-const clean = (s: unknown, max: number) => (typeof s === "string" ? s.replace(/[*_#`]/g, "").trim().slice(0, max) : "");
+// Trang công khai, không có tài khoản nên không biết tuổi khách: dù ở mức "mỏ hỗn" cũng chặn từ tục ở đầu ra
+const VULGAR = [
+  /\b(f+u+c+k\w*|sh[i1]t+(s|ty)?|bitch\w*|asshole\w*|bastard\w*|dicks?|cunts?|wtf|stfu|motherf\w*|retard\w*)\b/gi,
+  // Chỉ bắt bản có dấu, để "buoi", "lon", "cac" gõ không dấu (buổi, lon, các) không bị chặn nhầm
+  /(?<![\p{L}\p{M}])(địt|đụ|đéo|đếch|lồn|cặc|buồi|óc chó|chó chết|ngu|dốt|đm|đcm|dmm|vl|vcl|clgt)(?![\p{L}\p{M}])/giu,
+];
+const tame = (s: string) =>
+  VULGAR.reduce((t, re) => t.replace(re, "***"), s.normalize("NFC")).replace(/\*\*\*(?:[\s,]*\*\*\*)+/g, "***");
+const clean = (s: unknown, max: number) => (typeof s === "string" ? tame(s.replace(/[*_#`]/g, "").trim()).slice(0, max) : "");
 
 function parse(text: string): Line | null {
   const m = text.match(/\{[\s\S]*\}/);
@@ -93,13 +102,15 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as {
-    messages?: unknown; scenario?: unknown; level?: unknown; profile?: unknown; bid?: unknown; summary?: unknown;
+    messages?: unknown; scenario?: unknown; level?: unknown; spice?: unknown; profile?: unknown; bid?: unknown; summary?: unknown;
   };
   const summary = body.summary === true;
   const turns = cleanTurns(body.messages, summary ? 20 : 6);
   if (!turns.length) return json({ error: "Cần messages, lượt cuối là của khách" }, 400);
   const sc = scenarioOf(body.scenario);
   const level = typeof body.level === "string" && LEVELS.includes(body.level) ? body.level : "B1";
+  const spice = typeof body.spice === "string" && SPICES.includes(body.spice) ? body.spice : "light";
+  const replies = Array.isArray(body.messages) ? body.messages.filter((t) => (t as Turn)?.role === "assistant").length : 0;
   const profile = clean(body.profile, 300).replace(/\s+/g, " ");
   const bid = typeof body.bid === "string" && /^[a-z0-9]{8,40}$/i.test(body.bid) ? body.bid : "";
 
@@ -120,6 +131,7 @@ export async function POST(request: Request) {
 
   const context = [
     `Learner level: ${level}.`,
+    `Teasing level: ${spice}.${replies < 3 ? " This talk just started, keep it light." : ""}`,
     `Scenario: ${sc.title}. You play ${sc.role}. Setting: ${sc.setting}`,
     `You opened with: "${sc.opener.en}"`,
     `Learner's goals: ${sc.goals.map((g, i) => `${i + 1}. ${g}`).join(" ")}`,
