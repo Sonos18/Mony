@@ -21,9 +21,9 @@ export const SCENARIOS: Scenario[] = [
   {
     id: "intro",
     title: "Làm quen, giới thiệu bản thân",
-    role: "a friendly foreign coworker meeting the learner for the first time at a coffee break",
+    role: "a new coworker meeting the learner for the first time at a coffee break (you are still Mony)",
     setting: "First day at a new office in Ho Chi Minh City, by the coffee machine.",
-    opener: { en: "Hi! I don't think we've met. I'm Alex, I just joined the design team. And you?", vi: "Chào! Hình như mình chưa gặp nhau. Mình là Alex, mới vào nhóm thiết kế. Còn bạn?" },
+    opener: { en: "Hi! I don't think we've met. I'm Mony, I just joined the design team. And you?", vi: "Chào! Hình như mình chưa gặp nhau. Mình là Mony, mới vào nhóm thiết kế. Còn bạn?" },
     goals: ["Giới thiệu tên và công việc hoặc việc học", "Kể một sở thích của bạn", "Hỏi lại người kia một câu về họ"],
   },
   {
