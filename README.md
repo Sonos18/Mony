@@ -124,12 +124,16 @@ Lệnh Telegram (vẫn dùng được khi gõ tay):
 
 Bot tự viết nhật ký lúc 21:00 giờ Việt Nam mỗi ngày từ số liệu thật (cron của Vercel gọi `/api/cron-diary`; gói free chạy một lần mỗi ngày, có thể lệch trong vòng một giờ). Ngày nào đã có nhật ký thì bỏ qua.
 
-## Mony nói chuyện với khách trên trang
+## Luyện nói tiếng Anh với Mony
 
-Ô "Nói với Mony" dưới khung cảnh gọi `/api/talk`. Mony trả lời bằng tiếng Anh như nhân vật trong phim, kèm phụ đề tiếng Việt, và đọc câu tiếng Anh bằng giọng có sẵn của máy (máy nào cũng có giọng tiếng Anh). Khách gõ hoặc nói tiếng Việt đều được.
+Ô nói chuyện dưới khung cảnh gọi `/api/talk`. Mony là bạn cùng phòng trọ giúp người Việt luyện nói tiếng Anh: trả lời bằng tiếng Anh theo trình độ người học (A2, B1, B2), kèm phụ đề tiếng Việt, sửa lỗi bằng cách nói lại câu đúng và hiện một mẹo ngắn bằng tiếng Việt. Micro nhận giọng tiếng Anh; bí thì gõ tiếng Việt, Mony gợi ý câu để nói theo.
+
+- Tình huống luyện nói nằm trong `site/lib/scenarios.ts` (vai Mony đóng, bối cảnh, câu mở đầu, ba mục tiêu). Trang lấy danh sách qua `GET /api/talk`, nên thêm tình huống chỉ cần sửa file đó.
+- Nút "Kết thúc và tổng kết" gọi một lượt riêng để chấm mục tiêu, liệt kê tối đa 3 lỗi, 5 từ mới và câu hay nhất.
+- Không có tài khoản: tên gọi, trình độ, số buổi, chuỗi ngày, sổ từ và lỗi gần đây lưu trong `localStorage` (`mony.learner`). Mỗi lượt gửi kèm một hồ sơ ngắn dưới 300 ký tự để Mony nhớ người học; server không lưu hồ sơ. Nút "Mang sang máy khác" tạo link chứa dữ liệu sau `#hoc=`.
 
 - Mặc định dùng `gpt-5.4-nano` với mức suy luận thấp, chung hạn mức miễn phí 2,5 triệu token/ngày của nhóm model nhỏ với bot, dùng chung `OPENAI_API_KEY`. Hết hạn mức thì Mony nghỉ đến hôm sau.
-- Mỗi khách tối đa 20 lượt mỗi ngày (`TALK_DAILY_PER_VISITOR`).
+- Giới hạn lượt mỗi ngày: mỗi trình duyệt (IP cộng mã ngẫu nhiên lưu trên trình duyệt) 30 lượt (`TALK_DAILY_PER_VISITOR`), mỗi IP 150 lượt (`TALK_DAILY_PER_IP`, cao hơn vì Wi-Fi trường học hay quán cà phê dùng chung IP), cả trang 4.000 lượt (`TALK_DAILY_TOTAL`, trần chi phí cứng).
 - Hết hạn mức miễn phí của nano thì tự chuyển sang GLM-4.7-Flash miễn phí của Z.ai, nếu trên Vercel có biến `ZAI_API_KEY` (key lấy ở z.ai). Đổi model bằng `LLM_OVERFLOW_MODEL`, đổi endpoint bằng `LLM_OVERFLOW_BASE_URL`. Không có key thì Mony nghỉ đến hôm sau.
 
 ## Thêm nguồn kiếm tiền

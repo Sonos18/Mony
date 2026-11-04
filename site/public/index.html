@@ -136,6 +136,27 @@ button { font: inherit; cursor: pointer; }
 .talk .btn:disabled { opacity: .5; cursor: default; }
 @keyframes pulse { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--stamp) 25%, transparent); } }
 .talk-note { margin: 0; font-size: .78rem; color: var(--ink-soft); }
+.practice { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.practice select, .practice input { font: 400 .9rem/1.2 var(--f-body); color: var(--ink); background: var(--sheet);
+  border: 1.5px solid var(--ink); border-radius: 999px; padding: 6px 10px; min-width: 0; }
+.practice select#pr-scenario { flex: 1 1 200px; }
+.practice input#pr-name { flex: 0 1 130px; }
+.practice .btn { padding: 6px 12px; font-size: .88rem; }
+.goals { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: .82rem; color: var(--ink-soft); }
+.goals li::before { content: "○ "; }
+.goals li.met { color: var(--green); }
+.goals li.met::before { content: "✓ "; }
+.talk-tip { margin: 0; font-size: .86rem; padding: 6px 10px; border-radius: 8px; background: var(--blue-soft); color: var(--ink); }
+.talk-tip::before { content: "💡 "; }
+.recap { border: 1.5px solid var(--rule); border-radius: 10px; padding: 10px 12px; display: grid; gap: 8px; font-size: .9rem; }
+.recap h3 { margin: 0; font-size: 1rem; }
+.recap ul { margin: 0; padding-left: 18px; }
+.recap .wrong { text-decoration: line-through; color: var(--stamp); }
+.recap .right { color: var(--green); font-weight: 600; }
+.words { font-size: .86rem; }
+.words summary { cursor: pointer; color: var(--ink-soft); }
+.words ul { margin: 6px 0 0; padding-left: 18px; columns: 2 12ch; }
+.words .btn { margin-top: 6px; padding: 4px 10px; font-size: .8rem; }
 .stage-hint { position: absolute; bottom: 44px; right: 12px; font-size: .74rem; color: #efe6cf; text-shadow: 0 1px 2px #000; }
 .hero .kicker { font: 600 .78rem/1 var(--f-body); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); }
 .hero h1 { font: 400 clamp(2rem, 4.4vw, 3.15rem)/1.15 var(--f-hand); text-wrap: pretty; }
@@ -281,7 +302,7 @@ td.amt.cost { color: var(--stamp); }
         <circle cx="120" cy="94" r="6" fill="#f0c29c"/><circle cx="144" cy="94" r="6" fill="#f0c29c"/>
       </svg>
       <figcaption class="bubble" id="bubble" aria-live="polite">Xin chào, tôi là Mony.</figcaption>
-      <span class="stage-hint">Nói gì đó với Mony ở ô bên dưới</span>
+      <span class="stage-hint">Chọn tình huống rồi nói với Mony</span>
       <div class="stage-controls">
         <button class="ctl" id="voice-toggle" type="button" aria-pressed="false">🔇 Bật tiếng</button>
         <button class="ctl" id="replay" type="button">↺ Xem lại đoạn mở đầu</button>
@@ -449,11 +470,25 @@ td.amt.cost { color: var(--stamp); }
         <button class="skip" id="skip" type="button">Bỏ qua</button>
       </div>
     </figure>
+    <div class="practice" id="practice">
+      <select id="pr-scenario" aria-label="Chọn tình huống luyện nói"><option value="free">Nói chuyện tự do</option></select>
+      <select id="pr-level" aria-label="Trình độ tiếng Anh của bạn">
+        <option value="A2">Mới bắt đầu (A2)</option><option value="B1" selected>Trung bình (B1)</option><option value="B2">Khá (B2)</option>
+      </select>
+      <input id="pr-name" maxlength="30" placeholder="Tên gọi (tuỳ chọn)" aria-label="Mony nên gọi bạn là gì">
+      <button class="btn" id="pr-end" type="button" disabled>Kết thúc và tổng kết</button>
+    </div>
+    <ul class="goals" id="pr-goals" aria-label="Mục tiêu của tình huống"></ul>
     <form class="talk" id="talk" autocomplete="off">
       <button class="btn mic" id="talk-mic" type="button" aria-pressed="false" aria-label="Bấm rồi nói với Mony" title="Bấm rồi nói" hidden>🎤</button>
-      <input id="talk-input" name="q" maxlength="300" enterkeyhint="send" placeholder="Nói với Mony (Mony trả lời bằng tiếng Anh)…" aria-label="Nói với Mony">
+      <input id="talk-input" name="q" maxlength="300" enterkeyhint="send" placeholder="Nói tiếng Anh với Mony, bí thì gõ tiếng Việt…" aria-label="Nói với Mony">
       <button class="btn primary" id="talk-send" type="submit">Nói</button>
     </form>
+    <p class="talk-tip" id="talk-tip" aria-live="polite" hidden></p>
+    <div class="recap" id="recap" aria-live="polite" hidden></div>
+    <details class="words" id="words"><summary>Sổ từ của bạn (<span id="words-n">0</span>)</summary><ul id="words-list"></ul>
+      <button class="btn" id="words-move" type="button">Mang sang máy khác</button>
+      <button class="btn" id="words-clear" type="button">Xoá sổ từ</button></details>
     <p class="talk-note" id="talk-note">Mony là nhân vật hư cấu do AI đóng vai. Lời bạn được gửi tới OpenAI (hoặc Z.ai khi OpenAI hết hạn mức) để trả lời và có thể được dùng để huấn luyện mô hình, nên đừng gửi thông tin cá nhân.</p>
     </div>
   </section>
@@ -1784,48 +1819,173 @@ setInterval(load, 60000);
 })();
 </script>
 <script>
-// Nói chuyện trực tiếp với Mony: gõ hoặc bấm micro rồi nói. Mony trả lời trong bong bóng thoại và đọc thành tiếng.
+// Luyện nói tiếng Anh với Mony: chọn tình huống và trình độ, gõ hoặc bấm micro rồi nói.
+// Không có tài khoản: tiến độ, sổ từ và lỗi hay gặp lưu trong localStorage của trình duyệt này,
+// và có thể mang sang máy khác bằng một link chứa dữ liệu sau dấu #.
 (function () {
   const form = $("talk"), input = $("talk-input"), send = $("talk-send"), mic = $("talk-mic"), note = $("talk-note");
-  const bubble = $("bubble");
-  let history = [];
-  try { history = JSON.parse(sessionStorage.getItem("mony.talk") || "[]"); } catch {}
-  const save = () => { try { sessionStorage.setItem("mony.talk", JSON.stringify(history.slice(-10))); } catch {} };
+  const bubble = $("bubble"), pick = $("pr-scenario"), levelSel = $("pr-level"), nameIn = $("pr-name"), endBtn = $("pr-end");
+  const goalsEl = $("pr-goals"), tipEl = $("talk-tip"), recapEl = $("recap");
+  const NOTE = note.textContent;
+  const PLACEHOLDER = input.placeholder;
+  const vnToday = (d = 0) => new Date(Date.now() + 7 * 3600_000 + d * 86400_000).toISOString().slice(0, 10);
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+
+  // ---- Hồ sơ người học trên trình duyệt ----
+  const blank = () => ({ name: "", level: "B1", scenario: "free", sessions: 0, streak: 0, lastDay: "", words: [], mistakes: [], bid: "" });
+  let L = blank();
+  try { L = Object.assign(blank(), JSON.parse(localStorage.getItem("mony.learner") || "{}")); } catch {}
+  // Link "mang sang máy khác": #hoc=<dữ liệu>
+  if (location.hash.startsWith("#hoc=")) {
+    try {
+      const got = JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(5).replace(/-/g, "+").replace(/_/g, "/")))));
+      const words = [...L.words];
+      for (const w of got.words || []) if (w && w.en && !words.some((x) => x.en.toLowerCase() === String(w.en).toLowerCase())) words.push({ en: String(w.en).slice(0, 60), vi: String(w.vi || "").slice(0, 100) });
+      L = Object.assign(L, {
+        name: String(got.name || L.name).slice(0, 30), level: ["A2", "B1", "B2"].includes(got.level) ? got.level : L.level,
+        sessions: Math.max(L.sessions, Number(got.sessions) || 0), streak: Math.max(L.streak, Number(got.streak) || 0),
+        lastDay: String(got.lastDay || L.lastDay).slice(0, 10), words: words.slice(-200),
+      });
+      note.textContent = "Đã chuyển tiến độ luyện nói sang máy này.";
+    } catch { note.textContent = "Link chuyển máy bị lỗi, bạn thử copy lại nhé."; }
+    window.history.replaceState(null, "", location.pathname + location.search);
+  }
+  if (!/^[a-z0-9]{8,40}$/i.test(L.bid)) L.bid = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  const store = () => { try { localStorage.setItem("mony.learner", JSON.stringify(L)); } catch {} };
+  store();
+  levelSel.value = L.level; nameIn.value = L.name;
+  levelSel.addEventListener("change", () => { L.level = levelSel.value; store(); });
+  nameIn.addEventListener("change", () => { L.name = nameIn.value.trim().slice(0, 30); store(); });
+  const profile = () => [
+    L.name && "Name: " + L.name + ".",
+    "Sessions so far: " + L.sessions + (L.streak > 1 ? ", " + L.streak + "-day streak" : "") + ".",
+    L.mistakes.length && "Recent mistakes: " + L.mistakes.slice(-3).map((m) => m.wrong + " -> " + m.right).join("; ") + ".",
+  ].filter(Boolean).join(" ").slice(0, 300);
+
+  // ---- Sổ từ ----
+  function paintWords() {
+    $("words-n").textContent = L.words.length;
+    const ul = $("words-list"); ul.replaceChildren();
+    for (const w of L.words.slice().reverse()) { const li = el("li"); li.append(el("b", "", w.en), " " + (w.vi ? "· " + w.vi : "")); ul.append(li); }
+  }
+  paintWords();
+  $("words-clear").addEventListener("click", () => { if (confirm("Xoá hết sổ từ trên trình duyệt này?")) { L.words = []; store(); paintWords(); } });
+  $("words-move").addEventListener("click", async () => {
+    const data = { name: L.name, level: L.level, sessions: L.sessions, streak: L.streak, lastDay: L.lastDay, words: L.words.slice(-150) };
+    const code = btoa(unescape(encodeURIComponent(JSON.stringify(data)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const url = location.origin + location.pathname + "#hoc=" + code;
+    try { await navigator.clipboard.writeText(url); note.textContent = "Đã copy link. Mở link này trên máy kia để mang theo sổ từ và tiến độ."; }
+    catch { prompt("Copy link này rồi mở trên máy kia:", url); }
+  });
+
+  // ---- Tình huống ----
+  let scenarios = [{ id: "free", title: "Nói chuyện tự do", opener: { en: "Hey, come in. Sit anywhere. So, how was your day?", vi: "Vào đi, ngồi đâu cũng được. Hôm nay của bạn thế nào?" }, goals: [] }];
+  const current = () => scenarios.find((x) => x.id === pick.value) || scenarios[0];
+  function paintGoals(met) {
+    goalsEl.replaceChildren(...current().goals.map((g, i) => el("li", met && met[i] ? "met" : "", g)));
+  }
+  let turns = [];
+  let sess = null;
+  try { sess = JSON.parse(sessionStorage.getItem("mony.talk") || "null"); } catch {}
+  if (sess && Array.isArray(sess.turns)) turns = sess.turns;
+  const save = () => { try { sessionStorage.setItem("mony.talk", JSON.stringify({ scenario: pick.value, turns: turns.slice(-20) })); } catch {} };
+  const userTurns = () => turns.filter((t) => t.role === "user").length;
+  const paintEnd = () => { endBtn.disabled = busy || userTurns() < 2; };
+
+  function start(speak) {
+    const sc = current();
+    turns = [{ role: "assistant", content: sc.opener.en }];
+    tipEl.hidden = true; recapEl.hidden = true;
+    paintGoals(); save(); paintEnd();
+    if (speak && MONY.say) MONY.say(sc.opener.en, sc.opener.vi, "happy");
+  }
+  pick.addEventListener("change", () => { L.scenario = pick.value; store(); start(true); });
+  fetch(CONFIG.apiBase + "/talk", { headers: { accept: "application/json" } }).then((r) => r.json()).then((d) => {
+    if (!Array.isArray(d.scenarios) || !d.scenarios.length) return;
+    scenarios = d.scenarios;
+    pick.replaceChildren(...scenarios.map((x) => { const o = el("option", "", x.title); o.value = x.id; return o; }));
+    const want = (sess && sess.scenario) || L.scenario;
+    if (scenarios.some((x) => x.id === want)) pick.value = want;
+    paintGoals(); paintEnd();
+  }).catch(() => {});
+
   let busy = false;
+  const body = (extra) => JSON.stringify({ messages: turns.slice(extra.summary ? -20 : -10), scenario: pick.value, level: L.level, profile: profile(), bid: L.bid, ...extra });
 
   async function ask(text) {
     text = text.trim();
     if (!text || busy) return;
     ticking = true;
-    busy = true; send.disabled = true; input.value = "";
+    busy = true; send.disabled = true; input.value = ""; paintEnd();
     if (MONY.prologueActive) $("skip").click();
-    history.push({ role: "user", content: text });
+    if (!turns.length) start(false);
+    recapEl.hidden = true;
+    turns.push({ role: "user", content: text });
     MONY.quietUntil = performance.now() + 30000;
     bubble.textContent = "…";
-    let reply, sub = "", mood = "neutral";
+    let reply, sub = "", mood = "neutral", tip = "";
     try {
-      const r = await fetch(CONFIG.apiBase + "/talk", {
-        method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ messages: history.slice(-10) }),
-      });
+      const r = await fetch(CONFIG.apiBase + "/talk", { method: "POST", headers: { "content-type": "application/json" }, body: body({}) });
       const data = await r.json();
       reply = data.en || "Sorry, I didn't catch that. Say it again?";
       sub = data.en ? data.vi || "" : "Mony chưa nghe rõ. Bạn nói lại nhé?";
       mood = data.mood || "neutral";
-      if (r.ok) history.push({ role: "assistant", content: reply }); else history.pop();
-      note.textContent = typeof data.left === "number" && data.left <= 5
-        ? "Hôm nay bạn còn " + data.left + " lượt nói chuyện với Mony."
-        : "Mony là nhân vật hư cấu do AI đóng vai. Lời bạn được gửi tới OpenAI (hoặc Z.ai khi OpenAI hết hạn mức) để trả lời và có thể được dùng để huấn luyện mô hình, nên đừng gửi thông tin cá nhân.";
+      tip = r.ok ? data.tip || "" : "";
+      if (r.ok) turns.push({ role: "assistant", content: reply }); else turns.pop();
+      note.textContent = typeof data.left === "number" && data.left <= 5 ? "Hôm nay bạn còn " + data.left + " lượt nói chuyện với Mony." : NOTE;
     } catch (e) {
-      history.pop();
+      turns.pop();
       reply = "The Wi-Fi in this room is acting up again. Say that again?";
       sub = "Mạng phòng trọ lại chập chờn. Bạn nói lại giúp Mony nhé?";
       mood = "worried";
     }
     save();
+    tipEl.textContent = tip; tipEl.hidden = !tip;
     MONY.say ? MONY.say(reply, sub, mood) : (bubble.textContent = reply);
-    busy = false; send.disabled = false;
+    busy = false; send.disabled = false; paintEnd();
   }
+
+  // ---- Tổng kết cuối buổi ----
+  async function end() {
+    if (busy || userTurns() < 2) return;
+    busy = true; send.disabled = true; paintEnd();
+    endBtn.textContent = "Mony đang chấm…";
+    try {
+      const r = await fetch(CONFIG.apiBase + "/talk", { method: "POST", headers: { "content-type": "application/json" }, body: body({ summary: true }) });
+      const data = await r.json();
+      if (!r.ok || !data.summary) { MONY.say && MONY.say(data.en || "Something went wrong.", data.vi || "", data.mood || "worried"); return; }
+      const sm = data.summary;
+      // Cập nhật tiến độ
+      const today = vnToday();
+      if (L.lastDay !== today) { L.streak = L.lastDay === vnToday(-1) ? L.streak + 1 : 1; L.lastDay = today; }
+      L.sessions++;
+      for (const w of sm.words) if (!L.words.some((x) => x.en.toLowerCase() === w.en.toLowerCase())) L.words.push(w);
+      L.words = L.words.slice(-200);
+      L.mistakes = [...L.mistakes, ...sm.mistakes.map((m) => ({ wrong: m.wrong, right: m.right }))].slice(-10);
+      store(); paintWords(); paintGoals(sm.goals);
+      // Hiện bảng tổng kết
+      const met = sm.goals.filter(Boolean).length;
+      recapEl.replaceChildren(el("h3", "", "Tổng kết: đạt " + met + "/" + sm.goals.length + " mục tiêu"));
+      if (sm.best) { const p = el("p"); p.append(el("b", "", "Câu hay nhất: "), "“" + sm.best + "”"); recapEl.append(p); }
+      if (sm.mistakes.length) {
+        const ul = el("ul");
+        for (const m of sm.mistakes) { const li = el("li"); li.append(el("span", "wrong", m.wrong), " → ", el("span", "right", m.right), m.why ? " (" + m.why + ")" : ""); ul.append(li); }
+        recapEl.append(el("b", "", "Lỗi cần sửa"), ul);
+      }
+      if (sm.words.length) recapEl.append(el("p", "", "Từ mới đã thêm vào sổ: " + sm.words.map((w) => w.en).join(", ")));
+      recapEl.append(el("p", "", "Bạn đã luyện " + L.sessions + " buổi" + (L.streak > 1 ? ", chuỗi " + L.streak + " ngày liền" : "") + ". Chọn tình huống khác hoặc nói tiếp để bắt đầu buổi mới."));
+      recapEl.hidden = false; tipEl.hidden = true;
+      turns = [];
+      save();
+      MONY.say && MONY.say(data.en, data.vi, data.mood || "happy");
+    } catch {
+      note.textContent = "Mạng chập chờn, chưa tổng kết được. Bạn bấm lại nhé.";
+    } finally {
+      busy = false; send.disabled = false; endBtn.textContent = "Kết thúc và tổng kết"; paintEnd();
+    }
+  }
+  endBtn.addEventListener("click", end);
+  paintGoals(); paintEnd();
 
   form.addEventListener("submit", (e) => { e.preventDefault(); ask(input.value); });
 
@@ -1833,7 +1993,7 @@ setInterval(load, 60000);
   // Chỉ tính thời gian trang đang mở trước mắt khách, và nhớ trong phiên để tải lại trang không bị nhắc lại từ đầu.
   let talked = 0, nextAt = 1;
   try { const t = JSON.parse(sessionStorage.getItem("mony.talkTime") || "null"); if (t) { talked = t.talked; nextAt = t.nextAt; } } catch {}
-  let ticking = history.length > 0;
+  let ticking = turns.length > 0;
   setInterval(() => {
     if (!ticking || document.hidden) return;
     talked++;
@@ -1862,7 +2022,7 @@ setInterval(load, 60000);
     }
     if (window.speechSynthesis) speechSynthesis.cancel();
     rec = new SR();
-    rec.lang = "vi-VN"; rec.interimResults = true; rec.maxAlternatives = 1;
+    rec.lang = "en-US"; rec.interimResults = true; rec.maxAlternatives = 1;
     let finalText = "";
     rec.onresult = (e) => {
       let interim = "";
@@ -1876,7 +2036,7 @@ setInterval(load, 60000);
     mic.setAttribute("aria-pressed", "true");
     input.value = ""; input.placeholder = "Mony đang nghe…";
     rec.start();
-    setTimeout(() => { input.placeholder = "Nói với Mony (Mony trả lời bằng tiếng Anh)…"; }, 8000);
+    setTimeout(() => { input.placeholder = PLACEHOLDER; }, 8000);
   });
 })();
 </script>
